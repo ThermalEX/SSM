@@ -1,0 +1,13 @@
+{
+  "name": "Dark Blue",
+  "version": "1.0",
+  "background": "#0D1117",
+  "accentColor": "#58A6FF",
+  "textColor": "#E6EDF3",
+  "secondaryTextColor": "#8B949E",
+  "warningColor": "#D29922",
+  "dangerColor": "#F85149",
+  "fontFamily": "Segoe UI",
+  "fontSize": 14,
+  "components": []
+}

@@ -1,0 +1,79 @@
+## .NET / C# gitignore
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# Rider
+.idea/
+*.sln.iml
+
+# VS Code
+.vscode/
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/settings.json
+
+# NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# dotnet publish output
+publish/
+build/output/
+
+# User-specific files
+*.rsuser
+*.pidb
+*.svd
+*.userprefs
+*.dbmdl
+*.dbproj.schemaview
+*.jfm
+*.pfx
+*.publishsettings
+orleans.codegen.cs
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local settings (user overrides, not for version control)
+src/SSM/Assets/settings.json
+src/SSM/Assets/Themes/custom_*.json
+
+# Logs
+*.log
+logs/
+
+# Crash dumps
+*.dmp
