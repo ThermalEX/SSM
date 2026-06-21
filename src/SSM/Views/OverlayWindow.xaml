@@ -1,0 +1,123 @@
+<Window x:Class="SSM.Views.OverlayWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="SSM Overlay"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="True"
+        ShowInTaskbar="False"
+        ResizeMode="NoResize">
+
+    <!-- 全屏半透明背景 + 数据卡片 -->
+    <Border>
+        <Border.Background>
+            <SolidColorBrush Color="#CC0A0F1A"/>
+        </Border.Background>
+
+        <!-- 左上角紧凑布局，不遮挡全屏内容 -->
+        <StackPanel VerticalAlignment="Top" HorizontalAlignment="Left"
+                    Margin="16,16,0,0" Width="220">
+
+            <!-- 标识条 -->
+            <Border Background="#AA0C1420" CornerRadius="6,6,0,0"
+                    BorderBrush="#1E3A5F" BorderThickness="1,1,1,0" Padding="10,6">
+                <StackPanel Orientation="Horizontal">
+                    <Border Width="6" Height="6" CornerRadius="3"
+                            Background="#00B4D8" Margin="0,0,6,0">
+                        <Border.Effect>
+                            <DropShadowEffect Color="#00B4D8" BlurRadius="4" ShadowDepth="0"/>
+                        </Border.Effect>
+                    </Border>
+                    <TextBlock Text="SSM MONITOR" FontSize="9" FontWeight="Bold"
+                               Foreground="#00B4D8"/>
+                </StackPanel>
+            </Border>
+
+            <!-- 数据面板 -->
+            <Border Background="#AA0C1420" CornerRadius="0,0,6,6"
+                    BorderBrush="#1E3A5F" BorderThickness="1" Padding="10,8">
+                <StackPanel>
+
+                    <!-- CPU -->
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="36"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="CPU" FontSize="9" FontWeight="Bold"
+                                   Foreground="#00B4D8" VerticalAlignment="Center"/>
+                        <ProgressBar Grid.Column="1" Height="3"
+                                     Background="#1E3A5F" Foreground="#00B4D8"
+                                     BorderThickness="0" Maximum="100"
+                                     x:Name="OverlayCpuBar" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="2" x:Name="OverlayCpuText"
+                                   Text="--°C  --%"
+                                   FontSize="9" Foreground="#E0EAF5"
+                                   Margin="6,0,0,0" VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <!-- GPU -->
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="36"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="GPU" FontSize="9" FontWeight="Bold"
+                                   Foreground="#00B4D8" VerticalAlignment="Center"/>
+                        <ProgressBar Grid.Column="1" Height="3"
+                                     Background="#1E3A5F" Foreground="#00B4D8"
+                                     BorderThickness="0" Maximum="100"
+                                     x:Name="OverlayGpuBar" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="2" x:Name="OverlayGpuText"
+                                   Text="--°C  --%"
+                                   FontSize="9" Foreground="#E0EAF5"
+                                   Margin="6,0,0,0" VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <!-- RAM -->
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="36"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="RAM" FontSize="9" FontWeight="Bold"
+                                   Foreground="#00B4D8" VerticalAlignment="Center"/>
+                        <ProgressBar Grid.Column="1" Height="3"
+                                     Background="#1E3A5F" Foreground="#00B4D8"
+                                     BorderThickness="0" Maximum="100"
+                                     x:Name="OverlayRamBar" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="2" x:Name="OverlayRamText"
+                                   Text="-- GB"
+                                   FontSize="9" Foreground="#E0EAF5"
+                                   Margin="6,0,0,0" VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <!-- 分割线 -->
+                    <Border Height="1" Background="#1E3A5F" Margin="0,2,0,8"/>
+
+                    <!-- 网络 -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="36"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="NET" FontSize="9" FontWeight="Bold"
+                                   Foreground="#00B4D8" VerticalAlignment="Top"/>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock x:Name="OverlayNetUpText" Text="↑ -- MB/s"
+                                       FontSize="9" Foreground="#E0EAF5"/>
+                            <TextBlock x:Name="OverlayNetDownText" Text="↓ -- MB/s"
+                                       FontSize="9" Foreground="#E0EAF5" Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </Grid>
+
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </Border>
+</Window>

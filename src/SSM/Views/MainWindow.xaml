@@ -1,0 +1,314 @@
+<Window x:Class="SSM.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="SSM" Height="600" Width="900"
+        MinHeight="500" MinWidth="780"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="CanResizeWithGrip">
+
+    <Window.Resources>
+        <!-- 发光边框效果 -->
+        <DropShadowEffect x:Key="GlowEffect" Color="#00B4D8" BlurRadius="16"
+                          ShadowDepth="0" Opacity="0.4"/>
+        <DropShadowEffect x:Key="CardGlow" Color="#00B4D8" BlurRadius="8"
+                          ShadowDepth="0" Opacity="0.15"/>
+    </Window.Resources>
+
+    <!-- 外层：窗口阴影 + 圆角 -->
+    <Border CornerRadius="12" Effect="{StaticResource GlowEffect}">
+        <Border CornerRadius="12" ClipToBounds="True">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#E80A0F1A" Offset="0"/>
+                    <GradientStop Color="#EE0D1830" Offset="0.5"/>
+                    <GradientStop Color="#E80A0F1A" Offset="1"/>
+                </LinearGradientBrush>
+            </Border.Background>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="64"/>   <!-- 侧边栏 -->
+                    <ColumnDefinition Width="*"/>    <!-- 内容区 -->
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="48"/>     <!-- 标题栏 -->
+                    <RowDefinition Height="*"/>      <!-- 主内容 -->
+                    <RowDefinition Height="52"/>     <!-- 状态栏 -->
+                </Grid.RowDefinitions>
+
+                <!-- ══════════════════════════════════════
+                     标题栏（跨全宽）
+                ══════════════════════════════════════ -->
+                <Border Grid.Row="0" Grid.ColumnSpan="2"
+                        Background="#AA0C1420"
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="0,0,0,1"
+                        MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="64"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Logo 区 -->
+                        <StackPanel Grid.Column="0" Orientation="Horizontal"
+                                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Border Width="8" Height="8" CornerRadius="4"
+                                    Background="{StaticResource Accent}" Margin="0,0,6,0">
+                                <Border.Effect>
+                                    <DropShadowEffect Color="#00B4D8" BlurRadius="6" ShadowDepth="0"/>
+                                </Border.Effect>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- 标题 -->
+                        <StackPanel Grid.Column="1" Orientation="Horizontal"
+                                    VerticalAlignment="Center" Margin="0,0,0,0">
+                            <TextBlock Text="SSM" FontSize="14" FontWeight="Bold"
+                                       Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                            <TextBlock Text="  Secondary Screen Monitor" FontSize="11"
+                                       Foreground="{StaticResource TextSecondary}" VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <!-- 窗口控制按钮 -->
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Style="{StaticResource WindowControlButton}"
+                                    Content="─" FontSize="14"
+                                    Click="MinimizeButton_Click"/>
+                            <Button x:Name="CloseBtn"
+                                    Width="40" Height="32"
+                                    Background="Transparent" BorderThickness="0"
+                                    Foreground="{StaticResource TextSecondary}"
+                                    Cursor="Hand" FontSize="13"
+                                    Click="CloseButton_Click">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="Bg" Background="Transparent">
+                                            <TextBlock Text="✕" HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       Foreground="{TemplateBinding Foreground}"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Bg" Property="Background" Value="#C42B1C"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- ══════════════════════════════════════
+                     侧边导航栏
+                ══════════════════════════════════════ -->
+                <Border Grid.Row="1" Grid.RowSpan="2" Grid.Column="0"
+                        Background="{StaticResource SidebarBg}"
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="0,0,1,0">
+                    <StackPanel VerticalAlignment="Top" Margin="0,12,0,0">
+
+                        <!-- 仪表盘 -->
+                        <Button Style="{StaticResource NavButton}" Tag="dashboard"
+                                Click="NavButton_Click" ToolTip="仪表盘">
+                            <StackPanel>
+                                <TextBlock Text="⊞" FontSize="20" HorizontalAlignment="Center"
+                                           Foreground="{StaticResource Accent}"/>
+                                <TextBlock Text="监控" FontSize="9" HorizontalAlignment="Center"
+                                           Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- 主题 -->
+                        <Button Style="{StaticResource NavButton}" Tag="themes"
+                                Click="NavButton_Click" ToolTip="主题" Margin="0,4,0,0">
+                            <StackPanel>
+                                <TextBlock Text="◑" FontSize="20" HorizontalAlignment="Center"
+                                           Foreground="{StaticResource TextSecondary}"/>
+                                <TextBlock Text="主题" FontSize="9" HorizontalAlignment="Center"
+                                           Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- 设置 -->
+                        <Button Style="{StaticResource NavButton}" Tag="settings"
+                                Click="NavButton_Click" ToolTip="设置" Margin="0,4,0,0">
+                            <StackPanel>
+                                <TextBlock Text="⚙" FontSize="20" HorizontalAlignment="Center"
+                                           Foreground="{StaticResource TextSecondary}"/>
+                                <TextBlock Text="设置" FontSize="9" HorizontalAlignment="Center"
+                                           Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </Button>
+
+                    </StackPanel>
+                </Border>
+
+                <!-- ══════════════════════════════════════
+                     主内容区（仪表盘）
+                ══════════════════════════════════════ -->
+                <ScrollViewer Grid.Row="1" Grid.Column="1"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              Margin="16,16,16,8">
+                    <StackPanel>
+
+                        <!-- 区块标题 -->
+                        <TextBlock Text="实时监控" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextSecondary}"
+                                   Margin="0,0,0,12"/>
+
+                        <!-- 第一行：CPU / GPU / RAM -->
+                        <UniformGrid Columns="3" Rows="1">
+
+                            <!-- CPU 卡片 -->
+                            <Border Style="{StaticResource CardBorder}" Margin="0,0,8,8"
+                                    Effect="{StaticResource CardGlow}">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <TextBlock Text="CPU" FontSize="11" FontWeight="Bold"
+                                                   Foreground="{StaticResource Accent}"/>
+                                        <TextBlock x:Name="CpuNameText" Text="" FontSize="9"
+                                                   Foreground="{StaticResource TextSecondary}"
+                                                   VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                    </StackPanel>
+                                    <TextBlock x:Name="CpuTempText" Text="-- °C" FontSize="28"
+                                               FontWeight="Light" Foreground="{StaticResource TextPrimary}"
+                                               Margin="0,0,0,4"/>
+                                    <ProgressBar x:Name="CpuLoadBar" Style="{StaticResource TechProgressBar}"
+                                                 Maximum="100" Value="0" Margin="0,0,0,4"/>
+                                    <TextBlock x:Name="CpuLoadText" Text="负载 --%"
+                                               FontSize="10" Foreground="{StaticResource TextSecondary}"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- GPU 卡片 -->
+                            <Border Style="{StaticResource CardBorder}" Margin="4,0,4,8"
+                                    Effect="{StaticResource CardGlow}">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <TextBlock Text="GPU" FontSize="11" FontWeight="Bold"
+                                                   Foreground="{StaticResource Accent}"/>
+                                    </StackPanel>
+                                    <TextBlock x:Name="GpuTempText" Text="-- °C" FontSize="28"
+                                               FontWeight="Light" Foreground="{StaticResource TextPrimary}"
+                                               Margin="0,0,0,4"/>
+                                    <ProgressBar x:Name="GpuLoadBar" Style="{StaticResource TechProgressBar}"
+                                                 Maximum="100" Value="0" Margin="0,0,0,4"/>
+                                    <TextBlock x:Name="GpuLoadText" Text="负载 --%"
+                                               FontSize="10" Foreground="{StaticResource TextSecondary}"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- RAM 卡片 -->
+                            <Border Style="{StaticResource CardBorder}" Margin="8,0,0,8"
+                                    Effect="{StaticResource CardGlow}">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <TextBlock Text="RAM" FontSize="11" FontWeight="Bold"
+                                                   Foreground="{StaticResource Accent}"/>
+                                    </StackPanel>
+                                    <TextBlock x:Name="RamUsedText" Text="-- GB" FontSize="28"
+                                               FontWeight="Light" Foreground="{StaticResource TextPrimary}"
+                                               Margin="0,0,0,4"/>
+                                    <ProgressBar x:Name="RamBar" Style="{StaticResource TechProgressBar}"
+                                                 Maximum="100" Value="0" Margin="0,0,0,4"/>
+                                    <TextBlock x:Name="RamDetailText" Text="-- / -- GB"
+                                               FontSize="10" Foreground="{StaticResource TextSecondary}"/>
+                                </StackPanel>
+                            </Border>
+
+                        </UniformGrid>
+
+                        <!-- 第二行：网络 / 风扇 -->
+                        <UniformGrid Columns="3" Rows="1">
+
+                            <!-- 网络上传 -->
+                            <Border Style="{StaticResource CardBorder}" Margin="0,0,8,8">
+                                <StackPanel>
+                                    <TextBlock Text="网络 ↑" FontSize="11" FontWeight="Bold"
+                                               Foreground="{StaticResource Accent}" Margin="0,0,0,8"/>
+                                    <TextBlock x:Name="NetUpText" Text="-- MB/s" FontSize="22"
+                                               FontWeight="Light" Foreground="{StaticResource TextPrimary}"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- 网络下载 -->
+                            <Border Style="{StaticResource CardBorder}" Margin="4,0,4,8">
+                                <StackPanel>
+                                    <TextBlock Text="网络 ↓" FontSize="11" FontWeight="Bold"
+                                               Foreground="{StaticResource Accent}" Margin="0,0,0,8"/>
+                                    <TextBlock x:Name="NetDownText" Text="-- MB/s" FontSize="22"
+                                               FontWeight="Light" Foreground="{StaticResource TextPrimary}"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- 状态卡片 -->
+                            <Border Style="{StaticResource CardBorder}" Margin="8,0,0,8">
+                                <StackPanel>
+                                    <TextBlock Text="状态" FontSize="11" FontWeight="Bold"
+                                               Foreground="{StaticResource Accent}" Margin="0,0,0,8"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="8" Height="8" CornerRadius="4"
+                                                Background="{StaticResource TextSecondary}"
+                                                x:Name="StatusDot" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="StatusText" Text="未投放"
+                                                   FontSize="12" Foreground="{StaticResource TextSecondary}"
+                                                   VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                        </UniformGrid>
+
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- ══════════════════════════════════════
+                     底部状态栏
+                ══════════════════════════════════════ -->
+                <Border Grid.Row="2" Grid.Column="1"
+                        Background="#AA0C1420"
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="0,1,0,0"
+                        Padding="16,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- 副屏标签 -->
+                        <TextBlock Grid.Column="0" Text="投放到："
+                                   Foreground="{StaticResource TextSecondary}"
+                                   FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0"/>
+
+                        <!-- 显示器选择 -->
+                        <ComboBox Grid.Column="1" x:Name="ScreenSelector"
+                                  Style="{StaticResource ComboBoxStyle}"
+                                  Width="160" VerticalAlignment="Center"/>
+
+                        <!-- 开始/停止投放按钮 -->
+                        <Button Grid.Column="3"
+                                x:Name="ToggleOverlayButton"
+                                Style="{StaticResource PrimaryButton}"
+                                Content="▶  开始投放"
+                                Click="ToggleOverlay_Click"
+                                VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
+
+            </Grid>
+        </Border>
+    </Border>
+</Window>
