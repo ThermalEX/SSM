@@ -3,121 +3,114 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="SSM Overlay"
         WindowStyle="None"
-        AllowsTransparency="True"
-        Background="Transparent"
+        Background="#1C1C1E"
         Topmost="True"
         ShowInTaskbar="False"
         ResizeMode="NoResize">
 
-    <!-- 全屏半透明背景 + 数据卡片 -->
-    <Border>
-        <Border.Background>
-            <SolidColorBrush Color="#CC0A0F1A"/>
-        </Border.Background>
+        <!-- 可旋转内容区 -->
+        <Grid x:Name="RotatableContent" Margin="24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-        <!-- 左上角紧凑布局，不遮挡全屏内容 -->
-        <StackPanel VerticalAlignment="Top" HorizontalAlignment="Left"
-                    Margin="16,16,0,0" Width="220">
+            <!-- 顶部 branding -->
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="4,0,0,16">
+                <Ellipse Width="7" Height="7" Fill="#0A84FF"
+                         VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <TextBlock Text="SSM  Secondary Screen Monitor"
+                           FontSize="11" FontWeight="SemiBold"
+                           Foreground="#4A4A4F" VerticalAlignment="Center"/>
+            </StackPanel>
 
-            <!-- 标识条 -->
-            <Border Background="#AA0C1420" CornerRadius="6,6,0,0"
-                    BorderBrush="#1E3A5F" BorderThickness="1,1,1,0" Padding="10,6">
-                <StackPanel Orientation="Horizontal">
-                    <Border Width="6" Height="6" CornerRadius="3"
-                            Background="#00B4D8" Margin="0,0,6,0">
-                        <Border.Effect>
-                            <DropShadowEffect Color="#00B4D8" BlurRadius="4" ShadowDepth="0"/>
-                        </Border.Effect>
-                    </Border>
-                    <TextBlock Text="SSM MONITOR" FontSize="9" FontWeight="Bold"
-                               Foreground="#00B4D8"/>
-                </StackPanel>
-            </Border>
+            <!-- 2×2 数据卡片 -->
+            <UniformGrid Grid.Row="1" Columns="2" Rows="2">
 
-            <!-- 数据面板 -->
-            <Border Background="#AA0C1420" CornerRadius="0,0,6,6"
-                    BorderBrush="#1E3A5F" BorderThickness="1" Padding="10,8">
-                <StackPanel>
-
-                    <!-- CPU -->
-                    <Grid Margin="0,0,0,8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="36"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="CPU" FontSize="9" FontWeight="Bold"
-                                   Foreground="#00B4D8" VerticalAlignment="Center"/>
-                        <ProgressBar Grid.Column="1" Height="3"
-                                     Background="#1E3A5F" Foreground="#00B4D8"
-                                     BorderThickness="0" Maximum="100"
-                                     x:Name="OverlayCpuBar" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Column="2" x:Name="OverlayCpuText"
-                                   Text="--°C  --%"
-                                   FontSize="9" Foreground="#E0EAF5"
-                                   Margin="6,0,0,0" VerticalAlignment="Center"/>
-                    </Grid>
-
-                    <!-- GPU -->
-                    <Grid Margin="0,0,0,8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="36"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="GPU" FontSize="9" FontWeight="Bold"
-                                   Foreground="#00B4D8" VerticalAlignment="Center"/>
-                        <ProgressBar Grid.Column="1" Height="3"
-                                     Background="#1E3A5F" Foreground="#00B4D8"
-                                     BorderThickness="0" Maximum="100"
-                                     x:Name="OverlayGpuBar" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Column="2" x:Name="OverlayGpuText"
-                                   Text="--°C  --%"
-                                   FontSize="9" Foreground="#E0EAF5"
-                                   Margin="6,0,0,0" VerticalAlignment="Center"/>
-                    </Grid>
-
-                    <!-- RAM -->
-                    <Grid Margin="0,0,0,8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="36"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="RAM" FontSize="9" FontWeight="Bold"
-                                   Foreground="#00B4D8" VerticalAlignment="Center"/>
-                        <ProgressBar Grid.Column="1" Height="3"
-                                     Background="#1E3A5F" Foreground="#00B4D8"
-                                     BorderThickness="0" Maximum="100"
-                                     x:Name="OverlayRamBar" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Column="2" x:Name="OverlayRamText"
-                                   Text="-- GB"
-                                   FontSize="9" Foreground="#E0EAF5"
-                                   Margin="6,0,0,0" VerticalAlignment="Center"/>
-                    </Grid>
-
-                    <!-- 分割线 -->
-                    <Border Height="1" Background="#1E3A5F" Margin="0,2,0,8"/>
-
-                    <!-- 网络 -->
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="36"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="NET" FontSize="9" FontWeight="Bold"
-                                   Foreground="#00B4D8" VerticalAlignment="Top"/>
-                        <StackPanel Grid.Column="1">
-                            <TextBlock x:Name="OverlayNetUpText" Text="↑ -- MB/s"
-                                       FontSize="9" Foreground="#E0EAF5"/>
-                            <TextBlock x:Name="OverlayNetDownText" Text="↓ -- MB/s"
-                                       FontSize="9" Foreground="#E0EAF5" Margin="0,2,0,0"/>
+                <!-- CPU -->
+                <Border Background="#2C2C2E" CornerRadius="14"
+                        Margin="0,0,6,6" Padding="22,18">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Text="CPU"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="#0A84FF" Margin="0,0,0,0"/>
+                        <StackPanel DockPanel.Dock="Bottom">
+                            <ProgressBar x:Name="OverlayCpuBar"
+                                         Height="2" Maximum="100" Value="0"
+                                         Background="#3A3A3C" Foreground="#0A84FF"
+                                         BorderThickness="0" Margin="0,0,0,6"/>
+                            <TextBlock x:Name="OverlayCpuLoadText" Text="负载 --%"
+                                       FontSize="12" Foreground="#6E6E73"/>
                         </StackPanel>
-                    </Grid>
+                        <TextBlock x:Name="OverlayCpuTempText" Text="-- °C"
+                                   FontSize="42" FontWeight="Light" Foreground="#F2F2F7"
+                                   VerticalAlignment="Center"/>
+                    </DockPanel>
+                </Border>
 
-                </StackPanel>
-            </Border>
+                <!-- GPU -->
+                <Border Background="#2C2C2E" CornerRadius="14"
+                        Margin="6,0,0,6" Padding="22,18">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Text="GPU"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="#0A84FF" Margin="0,0,0,0"/>
+                        <StackPanel DockPanel.Dock="Bottom">
+                            <ProgressBar x:Name="OverlayGpuBar"
+                                         Height="2" Maximum="100" Value="0"
+                                         Background="#3A3A3C" Foreground="#0A84FF"
+                                         BorderThickness="0" Margin="0,0,0,6"/>
+                            <TextBlock x:Name="OverlayGpuLoadText" Text="负载 --%"
+                                       FontSize="12" Foreground="#6E6E73"/>
+                        </StackPanel>
+                        <TextBlock x:Name="OverlayGpuTempText" Text="-- °C"
+                                   FontSize="42" FontWeight="Light" Foreground="#F2F2F7"
+                                   VerticalAlignment="Center"/>
+                    </DockPanel>
+                </Border>
 
-        </StackPanel>
-    </Border>
+                <!-- RAM -->
+                <Border Background="#2C2C2E" CornerRadius="14"
+                        Margin="0,6,6,0" Padding="22,18">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Text="RAM"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="#0A84FF" Margin="0,0,0,0"/>
+                        <StackPanel DockPanel.Dock="Bottom">
+                            <ProgressBar x:Name="OverlayRamBar"
+                                         Height="2" Maximum="100" Value="0"
+                                         Background="#3A3A3C" Foreground="#0A84FF"
+                                         BorderThickness="0" Margin="0,0,0,6"/>
+                            <TextBlock x:Name="OverlayRamDetailText" Text="-- / -- GB"
+                                       FontSize="12" Foreground="#6E6E73"/>
+                        </StackPanel>
+                        <TextBlock x:Name="OverlayRamText" Text="-- GB"
+                                   FontSize="42" FontWeight="Light" Foreground="#F2F2F7"
+                                   VerticalAlignment="Center"/>
+                    </DockPanel>
+                </Border>
+
+                <!-- Network -->
+                <Border Background="#2C2C2E" CornerRadius="14"
+                        Margin="6,6,0,0" Padding="22,18">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Text="NET"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="#0A84FF" Margin="0,0,0,0"/>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="↑  上传" FontSize="11"
+                                       Foreground="#6E6E73" Margin="0,0,0,2"/>
+                            <TextBlock x:Name="OverlayNetUpText" Text="-- MB/s"
+                                       FontSize="28" FontWeight="Light"
+                                       Foreground="#F2F2F7" Margin="0,0,0,16"/>
+                            <TextBlock Text="↓  下载" FontSize="11"
+                                       Foreground="#6E6E73" Margin="0,0,0,2"/>
+                            <TextBlock x:Name="OverlayNetDownText" Text="-- MB/s"
+                                       FontSize="28" FontWeight="Light" Foreground="#F2F2F7"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+
+            </UniformGrid>
+        </Grid>
 </Window>
