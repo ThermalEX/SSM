@@ -71,7 +71,7 @@ SSM/
 ### 构建运行
 
 ```bash
-git clone https://github.com/your-username/SSM.git
+git clone https://github.com/ThermalEX/SSM.git
 cd SSM
 dotnet restore src/SSM/SSM.csproj
 dotnet run --project src/SSM/SSM.csproj
@@ -85,11 +85,11 @@ dotnet run --project src/SSM/SSM.csproj
 
 | 数据项 | 来源 | 刷新频率 |
 |--------|------|----------|
-| CPU 温度 / 使用率 | LibreHardwareMonitor | 可配置（默认 1s）|
-| GPU 温度 / 显存 | LibreHardwareMonitor | 可配置（默认 1s）|
-| 内存使用 | LibreHardwareMonitor | 可配置（默认 1s）|
-| 风扇转速 | LibreHardwareMonitor | 可配置（默认 1s）|
-| 网络流量 | LibreHardwareMonitor | 可配置（默认 1s）|
+| CPU 温度 / 使用率 | LibreHardwareMonitor | 可配置（默认 1s） |
+| GPU 温度 / 显存 | LibreHardwareMonitor | 可配置（默认 1s） |
+| 内存使用 | LibreHardwareMonitor | 可配置（默认 1s） |
+| 风扇转速 | LibreHardwareMonitor | 可配置（默认 1s） |
+| 网络流量 | LibreHardwareMonitor | 可配置（默认 1s） |
 
 ---
 
