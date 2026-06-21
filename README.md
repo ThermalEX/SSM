@@ -123,6 +123,5 @@ dotnet run --project src/SSM/SSM.csproj
 
 ---
 
-## License
-
-MIT © 2026
+## Collaborators
+- ThermalEX
