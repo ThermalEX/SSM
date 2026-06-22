@@ -1,0 +1,284 @@
+<Window x:Class="SSM.Views.ThemeEditorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="主题编辑器" Height="680" Width="1100"
+        MinHeight="500" MinWidth="800"
+        WindowStyle="SingleBorderWindow"
+        Background="{DynamicResource BgDeep}"
+        Closing="Window_Closing">
+
+    <DockPanel>
+
+        <!-- ── 顶部工具栏 ── -->
+        <Border DockPanel.Dock="Top"
+                Background="{DynamicResource TitleBarBg}"
+                BorderBrush="{DynamicResource DividerBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="10,0" Height="44">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+
+                <Button x:Name="SaveButton" Content="保存"
+                        Style="{DynamicResource PrimaryButton}"
+                        Padding="14,5" Click="SaveButton_Click"/>
+
+                <Separator Width="1" Background="{DynamicResource DividerBrush}"
+                           Margin="10,6,10,6"/>
+
+                <!-- + 元素按钮 -->
+                <Button Content="＋ 文字" Style="{DynamicResource SecondaryButton}"
+                        Padding="10,5" Margin="0,0,6,0"
+                        Click="AddText_Click"/>
+                <Button Content="＋ 进度条" Style="{DynamicResource SecondaryButton}"
+                        Padding="10,5" Margin="0,0,6,0"
+                        Click="AddProgressBar_Click"/>
+                <Button Content="＋ 传感器" Style="{DynamicResource SecondaryButton}"
+                        Padding="10,5" Margin="0,0,6,0"
+                        Click="AddSensorText_Click"/>
+                <Button Content="＋ 图片" Style="{DynamicResource SecondaryButton}"
+                        Padding="10,5" Margin="0,0,6,0"
+                        Click="AddImage_Click"/>
+
+                <Separator Width="1" Background="{DynamicResource DividerBrush}"
+                           Margin="10,6,10,6"/>
+
+                <!-- 背景色 -->
+                <TextBlock Text="背景：" Foreground="{DynamicResource TextSecondary}"
+                           FontSize="12" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                <TextBox x:Name="BgColorBox" Width="80" FontSize="11"
+                         FontFamily="Consolas"
+                         Background="{DynamicResource BgDeep}"
+                         Foreground="{DynamicResource TextPrimary}"
+                         BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
+                         Padding="6,4" VerticalAlignment="Center"
+                         LostFocus="BgColorBox_LostFocus"/>
+
+                <!-- 删除选中（右对齐） -->
+                <Button x:Name="DeleteSelectedButton" Content="删除选中"
+                        Foreground="{DynamicResource DangerBrush}"
+                        Background="Transparent" BorderThickness="0"
+                        FontSize="12" Padding="10,5"
+                        HorizontalAlignment="Right"
+                        Click="DeleteSelected_Click"
+                        IsEnabled="False">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}"
+                                                Padding="{TemplateBinding Padding}"
+                                                CornerRadius="4">
+                                            <ContentPresenter HorizontalAlignment="Center"
+                                                              VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Button.Style>
+                </Button>
+            </StackPanel>
+        </Border>
+
+        <!-- ── 左侧元素列表 ── -->
+        <Border DockPanel.Dock="Left" Width="160"
+                Background="{DynamicResource SidebarBg}"
+                BorderBrush="{DynamicResource DividerBrush}"
+                BorderThickness="0,0,1,0">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top"
+                           Text="元素列表" FontSize="11" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextSecondary}"
+                           Margin="10,10,10,4"/>
+                <ListBox x:Name="ElementList"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         SelectionChanged="ElementList_SelectionChanged">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Padding" Value="8,6"/>
+                            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                            <Setter Property="FontSize" Value="12"/>
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <Border Background="{TemplateBinding Background}"
+                                                Padding="{TemplateBinding Padding}"
+                                                CornerRadius="4" Margin="4,1">
+                                            <ContentPresenter/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource Accent}"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                            </Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource BgCard}"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                </ListBox>
+            </DockPanel>
+        </Border>
+
+        <!-- ── 右侧属性面板 ── -->
+        <Border DockPanel.Dock="Right" Width="210"
+                Background="{DynamicResource SidebarBg}"
+                BorderBrush="{DynamicResource DividerBrush}"
+                BorderThickness="1,0,0,0">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel x:Name="PropertyPanel" Margin="10,10,10,10">
+
+                    <TextBlock x:Name="NothingSelected"
+                               Text="点击 Canvas 上的元素&#10;查看属性"
+                               Foreground="{DynamicResource TextSecondary}"
+                               FontSize="12" TextAlignment="Center"
+                               HorizontalAlignment="Center" Margin="0,20,0,0"/>
+
+                    <!-- 属性组：位置与大小 -->
+                    <StackPanel x:Name="PanelPosition" Visibility="Collapsed">
+                        <TextBlock Text="位置与大小" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,6"/>
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="30"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="30"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="X" FontSize="11"
+                                       Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center"/>
+                            <TextBox x:Name="PropX" Grid.Column="1"
+                                     Style="{DynamicResource PropTextBox}" LostFocus="PropX_LostFocus"/>
+                            <TextBlock Grid.Column="2" Text="Y" FontSize="11"
+                                       Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                            <TextBox x:Name="PropY" Grid.Column="3"
+                                     Style="{DynamicResource PropTextBox}" LostFocus="PropY_LostFocus"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="30"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="30"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="W" FontSize="11"
+                                       Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center"/>
+                            <TextBox x:Name="PropW" Grid.Column="1"
+                                     Style="{DynamicResource PropTextBox}" LostFocus="PropW_LostFocus"/>
+                            <TextBlock Grid.Column="2" Text="H" FontSize="11"
+                                       Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                            <TextBox x:Name="PropH" Grid.Column="3"
+                                     Style="{DynamicResource PropTextBox}" LostFocus="PropH_LostFocus"/>
+                        </Grid>
+
+                        <!-- 透明度 -->
+                        <TextBlock Text="透明度" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4"/>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="32"/>
+                            </Grid.ColumnDefinitions>
+                            <Slider x:Name="PropOpacity" Grid.Column="0"
+                                    Minimum="0" Maximum="1" SmallChange="0.05"
+                                    VerticalAlignment="Center"
+                                    ValueChanged="PropOpacity_ValueChanged"/>
+                            <TextBlock x:Name="PropOpacityLabel" Grid.Column="1"
+                                       Text="1.0" FontSize="11"
+                                       Foreground="{DynamicResource TextSecondary}"
+                                       VerticalAlignment="Center" Margin="4,0,0,0"/>
+                        </Grid>
+
+                        <!-- 字体颜色（Text / SensorText） -->
+                        <StackPanel x:Name="PanelFont" Visibility="Collapsed">
+                            <TextBlock Text="文字外观" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4"/>
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="40"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="字号" FontSize="11"
+                                           Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center"/>
+                                <TextBox x:Name="PropFontSize" Grid.Column="1"
+                                         Style="{DynamicResource PropTextBox}" LostFocus="PropFontSize_LostFocus"/>
+                            </Grid>
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="40"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="颜色" FontSize="11"
+                                           Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center"/>
+                                <TextBox x:Name="PropFontColor" Grid.Column="1"
+                                         FontFamily="Consolas" FontSize="11"
+                                         Style="{DynamicResource PropTextBox}" LostFocus="PropFontColor_LostFocus"/>
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- 静态文字内容（Type=Text） -->
+                        <StackPanel x:Name="PanelText" Visibility="Collapsed">
+                            <TextBlock Text="文字内容" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4"/>
+                            <TextBox x:Name="PropText"
+                                     Style="{DynamicResource PropTextBox}"
+                                     TextWrapping="Wrap" MinHeight="48"
+                                     AcceptsReturn="True"
+                                     LostFocus="PropText_LostFocus"
+                                     Margin="0,0,0,12"/>
+                        </StackPanel>
+
+                        <!-- 数据绑定（SensorText / ProgressBar） -->
+                        <StackPanel x:Name="PanelBinding" Visibility="Collapsed">
+                            <TextBlock Text="数据绑定" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4"/>
+                            <TextBlock Text="CPU.Temperature / CPU.Load&#10;GPU.Temperature / GPU.Load&#10;Memory.UsagePercent&#10;Network.UploadSpeed"
+                                       FontSize="10" Foreground="{DynamicResource TextSecondary}"
+                                       Margin="0,0,0,4"/>
+                            <TextBox x:Name="PropBinding"
+                                     Style="{DynamicResource PropTextBox}"
+                                     LostFocus="PropBinding_LostFocus"
+                                     Margin="0,0,0,12"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <!-- ── 中央 Canvas 预览区 ── -->
+        <ScrollViewer Background="{DynamicResource BgDeep}"
+                      HorizontalScrollBarVisibility="Auto"
+                      VerticalScrollBarVisibility="Auto">
+            <Grid HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20">
+                <!-- 960×540 = 1920×1080 的 50% -->
+                <Viewbox Width="960" Height="540" Stretch="Uniform">
+                    <Canvas x:Name="CanvasArea" Width="1920" Height="1080"
+                            ClipToBounds="True"
+                            MouseLeftButtonDown="Canvas_MouseLeftButtonDown"/>
+                </Viewbox>
+            </Grid>
+        </ScrollViewer>
+
+    </DockPanel>
+
+    <Window.Resources>
+        <!-- 属性面板输入框公共样式 -->
+        <Style x:Key="PropTextBox" TargetType="TextBox">
+            <Setter Property="Background" Value="{DynamicResource BgDeep}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="6,4"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+    </Window.Resources>
+
+</Window>

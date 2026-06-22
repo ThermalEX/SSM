@@ -10,10 +10,14 @@ public class ThemeService : IThemeService
     private const string ThemesDir = "Assets/Themes";
 
     public ThemeConfig CurrentTheme { get; private set; } = new();
-    public IReadOnlyList<string> AvailableThemes => Directory
-        .GetFiles(ThemesDir, "*.json")
-        .ToList()
-        .AsReadOnly();
+    public IReadOnlyList<string> AvailableThemes
+    {
+        get
+        {
+            Directory.CreateDirectory(ThemesDir);
+            return Directory.GetFiles(ThemesDir, "*.json").ToList().AsReadOnly();
+        }
+    }
 
     public void LoadTheme(string path)
     {

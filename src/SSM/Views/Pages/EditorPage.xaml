@@ -2,25 +2,67 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Grid>
-        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-            <!-- MDI: pencil/edit -->
-            <Path Width="52" Height="52" HorizontalAlignment="Center" Stretch="Uniform"
-                  Fill="{DynamicResource TextSecondary}"
-                  Data="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z"/>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="48"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-            <TextBlock Text="主题编辑器" FontSize="22" FontWeight="SemiBold"
-                       Foreground="{DynamicResource TextPrimary}"
-                       HorizontalAlignment="Center" Margin="0,18,0,6"/>
-            <TextBlock Text="自定义副屏显示内容、字体、颜色、布局与背景" FontSize="13"
-                       Foreground="{DynamicResource TextSecondary}"
-                       HorizontalAlignment="Center" Margin="0,0,0,4"/>
-            <TextBlock Text="支持拖拽排列组件与实时预览效果" FontSize="12"
-                       Foreground="{DynamicResource TextSecondary}"
-                       HorizontalAlignment="Center"/>
-            <Border Background="{DynamicResource Accent}" CornerRadius="4"
-                    Padding="10,4" Margin="0,22,0,0" HorizontalAlignment="Center">
-                <TextBlock Text="即将上线" FontSize="11" Foreground="White" FontWeight="Medium"/>
-            </Border>
-        </StackPanel>
+        <!-- 顶部工具栏 -->
+        <Border Grid.Row="0"
+                BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1"
+                Padding="16,0">
+            <Grid>
+                <TextBlock Text="自定义主题" FontSize="13" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextPrimary}"
+                           VerticalAlignment="Center"/>
+                <Button x:Name="NewThemeButton" Content="＋ 新建主题"
+                        Style="{DynamicResource PrimaryButton}"
+                        HorizontalAlignment="Right" VerticalAlignment="Center"
+                        Click="NewThemeButton_Click"/>
+            </Grid>
+        </Border>
+
+        <!-- 新建主题内联输入框（默认隐藏，覆盖在工具栏上） -->
+        <Border x:Name="NewThemePanel" Grid.Row="0"
+                Background="{DynamicResource BgCard}"
+                BorderBrush="{DynamicResource Accent}" BorderThickness="1"
+                CornerRadius="6" Padding="12,6"
+                HorizontalAlignment="Right" VerticalAlignment="Center"
+                Margin="0,0,16,0"
+                Visibility="Collapsed" Panel.ZIndex="10">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="主题名称：" Foreground="{DynamicResource TextSecondary}"
+                           FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                <TextBox x:Name="NewThemeNameBox" Width="140" FontSize="12"
+                         Background="{DynamicResource BgDeep}"
+                         Foreground="{DynamicResource TextPrimary}"
+                         BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
+                         Padding="6,4" VerticalAlignment="Center"
+                         KeyDown="NewThemeNameBox_KeyDown"/>
+                <Button Content="确定" Style="{DynamicResource PrimaryButton}"
+                        Margin="8,0,0,0" Padding="10,4"
+                        Click="ConfirmNewTheme_Click"/>
+                <Button Content="取消" Style="{DynamicResource SecondaryButton}"
+                        Margin="4,0,0,0" Padding="10,4"
+                        Click="CancelNewTheme_Click"/>
+            </StackPanel>
+        </Border>
+
+        <!-- 主题卡片区域 -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+            <Grid>
+                <!-- 空状态 -->
+                <TextBlock x:Name="EmptyHint"
+                           Text="暂无自定义主题，点击右上角「＋ 新建主题」开始"
+                           FontSize="13" Foreground="{DynamicResource TextSecondary}"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           Margin="0,60,0,0"/>
+
+                <!-- 卡片列表 -->
+                <WrapPanel x:Name="ThemeCardPanel" Margin="12,12,12,12"
+                           Orientation="Horizontal"/>
+            </Grid>
+        </ScrollViewer>
     </Grid>
 </UserControl>

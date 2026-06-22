@@ -1,13 +1,13 @@
 {
-  "name": "Dark Blue",
-  "version": "1.0",
-  "background": "#0D1117",
-  "accentColor": "#58A6FF",
-  "textColor": "#E6EDF3",
-  "secondaryTextColor": "#8B949E",
-  "warningColor": "#D29922",
-  "dangerColor": "#F85149",
-  "fontFamily": "Segoe UI",
-  "fontSize": 14,
-  "components": []
+  "Name": "Default",
+  "Version": "1.0",
+  "Background": "#0D1117",
+  "AccentColor": "#58A6FF",
+  "TextColor": "#E6EDF3",
+  "SecondaryTextColor": "#8B949E",
+  "WarningColor": "#D29922",
+  "DangerColor": "#F85149",
+  "FontFamily": "Segoe UI",
+  "FontSize": 14,
+  "Components": []
 }
