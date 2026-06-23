@@ -11,6 +11,8 @@ public class HardwareMonitorService : IHardwareMonitorService
 
     public HardwareData CurrentData { get; private set; } = new();
     public event EventHandler<HardwareData>? DataUpdated;
+    public string CpuName { get; private set; } = "";
+    public string GpuName { get; private set; } = "";
 
     public HardwareMonitorService()
     {
@@ -51,12 +53,14 @@ public class HardwareMonitorService : IHardwareMonitorService
             switch (hw.HardwareType)
             {
                 case HardwareType.Cpu:
+                    if (CpuName.Length == 0) CpuName = hw.Name;
                     ReadCpu(hw, data.Cpu);
                     break;
 
                 case HardwareType.GpuNvidia:
                 case HardwareType.GpuAmd:
                 case HardwareType.GpuIntel:
+                    if (GpuName.Length == 0) GpuName = hw.Name;
                     ReadGpu(hw, data.Gpu);
                     break;
 
@@ -95,6 +99,11 @@ public class HardwareMonitorService : IHardwareMonitorService
             {
                 cpu.FanSpeed = s.Value ?? 0;
             }
+            else if (s.SensorType == SensorType.Clock &&
+                     s.Name.Contains("Core #1", StringComparison.OrdinalIgnoreCase))
+            {
+                cpu.Clock = s.Value ?? 0;
+            }
         }
 
         cpu.Temperature = tempSensor?.Value ?? 0;
@@ -132,6 +141,10 @@ public class HardwareMonitorService : IHardwareMonitorService
 
                 case SensorType.Fan when gpu.FanSpeed == 0:
                     gpu.FanSpeed = s.Value ?? 0;
+                    break;
+
+                case SensorType.Clock when s.Name.Contains("Core", StringComparison.OrdinalIgnoreCase) && gpu.Clock == 0:
+                    gpu.Clock = s.Value ?? 0;
                     break;
             }
         }

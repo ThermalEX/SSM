@@ -15,6 +15,7 @@ public class CpuData
     public float Load { get; set; }
     public float[] CoreLoads { get; set; } = [];
     public float FanSpeed { get; set; }
+    public float Clock { get; set; }  // MHz
 }
 
 public class GpuData
@@ -24,6 +25,7 @@ public class GpuData
     public float MemoryUsed { get; set; }
     public float MemoryTotal { get; set; }
     public float FanSpeed { get; set; }
+    public float Clock { get; set; }  // MHz
 }
 
 public class MemoryData

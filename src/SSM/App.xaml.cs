@@ -51,8 +51,8 @@ public partial class App : System.Windows.Application
         var dicts = Current.Resources.MergedDictionaries;
         dicts.Clear();
         var uri = name == "Light"
-            ? new Uri("Themes/LightTheme.xaml", UriKind.Relative)
-            : new Uri("Themes/DarkTheme.xaml", UriKind.Relative);
+            ? new Uri("Themes/App/LightTheme.xaml", UriKind.Relative)
+            : new Uri("Themes/App/DarkTheme.xaml", UriKind.Relative);
         dicts.Add(new ResourceDictionary { Source = uri });
     }
 }
