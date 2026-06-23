@@ -17,4 +17,6 @@ public class AppSettings
     public TemperatureUnit TemperatureUnit { get; set; } = TemperatureUnit.Celsius;
     public MemoryUnit MemoryUnit { get; set; } = MemoryUnit.GB;
     public NetworkSpeedUnit NetworkSpeedUnit { get; set; } = NetworkSpeedUnit.Auto;
+
+    public List<DashboardWidgetConfig> DashboardWidgets { get; set; } = new();
 }

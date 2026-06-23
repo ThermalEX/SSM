@@ -152,83 +152,31 @@
                               HorizontalScrollBarVisibility="Disabled"
                               Padding="16,14,16,0">
                     <StackPanel>
-                        <TextBlock Text="实时监控" FontSize="11" FontWeight="Medium"
-                                   Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,10"/>
+                        <!-- 标题行 + 编辑按钮 -->
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="实时监控" FontSize="11" FontWeight="Medium"
+                                       Foreground="{DynamicResource TextSecondary}"
+                                       VerticalAlignment="Center"/>
+                            <Button x:Name="EditLayoutButton" Grid.Column="1"
+                                    Style="{DynamicResource WindowControlButton}"
+                                    Click="EditLayout_Click"
+                                    Height="22" Padding="8,0"
+                                    VerticalAlignment="Center">
+                                <TextBlock x:Name="EditLayoutText" Text="编辑" FontSize="10"
+                                           Foreground="{DynamicResource TextSecondary}"/>
+                            </Button>
+                        </Grid>
 
-                        <UniformGrid Columns="3" Rows="1">
-                            <Border Style="{DynamicResource CardBorder}" Margin="0,0,6,8">
-                                <StackPanel>
-                                    <TextBlock Text="CPU" FontSize="10" FontWeight="SemiBold"
-                                               Foreground="{DynamicResource Accent}" Margin="0,0,0,6"/>
-                                    <TextBlock x:Name="CpuTempText" Text="-- °C" FontSize="26"
-                                               FontWeight="Light" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,6"/>
-                                    <ProgressBar x:Name="CpuLoadBar" Style="{DynamicResource TechProgressBar}"
-                                                 Maximum="100" Value="0" Margin="0,0,0,4"/>
-                                    <TextBlock x:Name="CpuLoadText" Text="负载 --%" FontSize="10"
-                                               Foreground="{DynamicResource TextSecondary}"/>
-                                </StackPanel>
-                            </Border>
+                        <!-- 动态卡片区 -->
+                        <UniformGrid x:Name="DashboardGrid" Columns="4"/>
 
-                            <Border Style="{DynamicResource CardBorder}" Margin="3,0,3,8">
-                                <StackPanel>
-                                    <TextBlock Text="GPU" FontSize="10" FontWeight="SemiBold"
-                                               Foreground="{DynamicResource Accent}" Margin="0,0,0,6"/>
-                                    <TextBlock x:Name="GpuTempText" Text="-- °C" FontSize="26"
-                                               FontWeight="Light" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,6"/>
-                                    <ProgressBar x:Name="GpuLoadBar" Style="{DynamicResource TechProgressBar}"
-                                                 Maximum="100" Value="0" Margin="0,0,0,4"/>
-                                    <TextBlock x:Name="GpuLoadText" Text="负载 --%" FontSize="10"
-                                               Foreground="{DynamicResource TextSecondary}"/>
-                                </StackPanel>
-                            </Border>
-
-                            <Border Style="{DynamicResource CardBorder}" Margin="6,0,0,8">
-                                <StackPanel>
-                                    <TextBlock Text="RAM" FontSize="10" FontWeight="SemiBold"
-                                               Foreground="{DynamicResource Accent}" Margin="0,0,0,6"/>
-                                    <TextBlock x:Name="RamUsedText" Text="-- GB" FontSize="26"
-                                               FontWeight="Light" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,6"/>
-                                    <ProgressBar x:Name="RamBar" Style="{DynamicResource TechProgressBar}"
-                                                 Maximum="100" Value="0" Margin="0,0,0,4"/>
-                                    <TextBlock x:Name="RamDetailText" Text="-- / -- GB" FontSize="10"
-                                               Foreground="{DynamicResource TextSecondary}"/>
-                                </StackPanel>
-                            </Border>
-                        </UniformGrid>
-
-                        <UniformGrid Columns="3" Rows="1">
-                            <Border Style="{DynamicResource CardBorder}" Margin="0,0,6,8">
-                                <StackPanel>
-                                    <TextBlock Text="网络 ↑" FontSize="10" FontWeight="SemiBold"
-                                               Foreground="{DynamicResource Accent}" Margin="0,0,0,6"/>
-                                    <TextBlock x:Name="NetUpText" Text="-- MB/s" FontSize="20"
-                                               FontWeight="Light" Foreground="{DynamicResource TextPrimary}"/>
-                                </StackPanel>
-                            </Border>
-
-                            <Border Style="{DynamicResource CardBorder}" Margin="3,0,3,8">
-                                <StackPanel>
-                                    <TextBlock Text="网络 ↓" FontSize="10" FontWeight="SemiBold"
-                                               Foreground="{DynamicResource Accent}" Margin="0,0,0,6"/>
-                                    <TextBlock x:Name="NetDownText" Text="-- MB/s" FontSize="20"
-                                               FontWeight="Light" Foreground="{DynamicResource TextPrimary}"/>
-                                </StackPanel>
-                            </Border>
-
-                            <Border Style="{DynamicResource CardBorder}" Margin="6,0,0,8">
-                                <StackPanel>
-                                    <TextBlock Text="状态" FontSize="10" FontWeight="SemiBold"
-                                               Foreground="{DynamicResource Accent}" Margin="0,0,0,6"/>
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <Ellipse x:Name="StatusDot" Width="7" Height="7"
-                                                 Fill="{DynamicResource TextSecondary}" VerticalAlignment="Center"/>
-                                        <TextBlock x:Name="StatusText" Text="未投放" FontSize="12"
-                                                   Foreground="{DynamicResource TextSecondary}"
-                                                   VerticalAlignment="Center" Margin="6,0,0,0"/>
-                                    </StackPanel>
-                                </StackPanel>
-                            </Border>
-                        </UniformGrid>
+                        <!-- 已隐藏卡片芯片区（仅编辑模式可见） -->
+                        <WrapPanel x:Name="HiddenWidgetsPanel" Visibility="Collapsed"
+                                   Margin="0,8,0,0" Orientation="Horizontal"/>
                     </StackPanel>
                 </ScrollViewer>
 
@@ -251,6 +199,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
@@ -260,11 +209,20 @@
                     <ComboBox Grid.Column="1" x:Name="ScreenSelector"
                               Style="{DynamicResource ComboBoxStyle}"
                               Width="200" VerticalAlignment="Center"/>
+                    <Button Grid.Column="2" x:Name="RefreshScreensButton"
+                            Style="{DynamicResource WindowControlButton}"
+                            Click="RefreshScreens_Click"
+                            ToolTip="刷新显示器列表"
+                            VerticalAlignment="Center" Margin="4,0,0,0" Width="28" Height="28">
+                        <Path Width="14" Height="14" Stretch="Uniform"
+                              Fill="{DynamicResource TextSecondary}"
+                              Data="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z"/>
+                    </Button>
                     <!-- 投放状态指示点 -->
-                    <Ellipse x:Name="TitleDot" Grid.Column="2" Width="7" Height="7"
-                             Fill="{DynamicResource DangerBrush}"
+                    <Ellipse x:Name="TitleDot" Grid.Column="3" Width="7" Height="7"
+                             Fill="{DynamicResource TextSecondary}"
                              HorizontalAlignment="Left" VerticalAlignment="Center" Margin="12,0,0,0"/>
-                    <Button Grid.Column="3" x:Name="ToggleOverlayButton"
+                    <Button Grid.Column="4" x:Name="ToggleOverlayButton"
                             Style="{DynamicResource PrimaryButton}"
                             Click="ToggleOverlay_Click"
                             ToolTip="投放中可用 Ctrl+Shift+S 或 Esc 快速停止"
