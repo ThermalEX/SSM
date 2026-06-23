@@ -2,7 +2,9 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
+using SSM.Core.Helpers;
 using SSM.Core.Interfaces;
+using SSM.Core.Models;
 using SSM.ViewModels;
 using SSM.Views.Pages;
 
@@ -13,9 +15,11 @@ public partial class MainWindow : Window
     private OverlayWindow? _overlay;
     private bool _isOverlayRunning;
     private readonly SettingsPage _settingsPage;
-    private readonly ThemePage    _themePage;
-    private readonly EditorPage   _editorPage;
+    private readonly ThemePage _themePage;
+    private readonly EditorPage _editorPage;
     private readonly SettingsViewModel _settingsVm;
+    private readonly ISettingsService _settingsService;
+    private readonly IHardwareMonitorService _monitor;
     private string _currentNav = "dashboard";
 
     private static readonly System.Windows.Media.Geometry _iconPlay = System.Windows.Media.Geometry.Parse("M8,5.14V19.14L19,12.14L8,5.14Z");
@@ -27,8 +31,8 @@ public partial class MainWindow : Window
     [DllImport("user32.dll")] private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
     private const uint DWMWA_WINDOW_CORNER_PREFERENCE = 33;
-    private const int  DWMWCP_ROUND        = 2;
-    private const int  HOTKEY_STOP_OVERLAY = 9001;
+    private const int DWMWCP_ROUND = 2;
+    private const int HOTKEY_STOP_OVERLAY = 9001;
 
     protected override void OnSourceInitialized(EventArgs e)
     {
@@ -43,7 +47,35 @@ public partial class MainWindow : Window
     {
         if (_isOverlayRunning)
             UnregisterHotKey(new WindowInteropHelper(this).Handle, HOTKEY_STOP_OVERLAY);
+        _monitor.DataUpdated -= OnDataUpdated;
+        _monitor.Stop();
+        _monitor.Dispose();
         base.OnClosed(e);
+    }
+
+    private void OnDataUpdated(object? sender, HardwareData data)
+    {
+        Dispatcher.Invoke(() => UpdateDashboard(data));
+    }
+
+    private void UpdateDashboard(HardwareData data)
+    {
+        var s = _settingsService.Settings;
+
+        CpuTempText.Text = UnitConverter.FormatTemperature(data.Cpu.Temperature, s.TemperatureUnit);
+        CpuLoadBar.Value = data.Cpu.Load;
+        CpuLoadText.Text = $"负载 {data.Cpu.Load:F0}%";
+
+        GpuTempText.Text = UnitConverter.FormatTemperature(data.Gpu.Temperature, s.TemperatureUnit);
+        GpuLoadBar.Value = data.Gpu.Load;
+        GpuLoadText.Text = $"负载 {data.Gpu.Load:F0}%";
+
+        RamUsedText.Text = UnitConverter.FormatMemory(data.Memory.Used, s.MemoryUnit);
+        RamBar.Value = data.Memory.UsagePercent;
+        RamDetailText.Text = $"{UnitConverter.FormatMemory(data.Memory.Used, s.MemoryUnit)} / {UnitConverter.FormatMemory(data.Memory.Total, s.MemoryUnit)}";
+
+        NetUpText.Text = UnitConverter.FormatNetworkSpeed(data.Network.UploadSpeed, s.NetworkSpeedUnit);
+        NetDownText.Text = UnitConverter.FormatNetworkSpeed(data.Network.DownloadSpeed, s.NetworkSpeedUnit);
     }
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -57,16 +89,18 @@ public partial class MainWindow : Window
         return IntPtr.Zero;
     }
 
-    public MainWindow(ISettingsService settingsService)
+    public MainWindow(ISettingsService settingsService, IHardwareMonitorService monitor)
     {
         InitializeComponent();
+        _settingsService = settingsService;
+        _monitor = monitor;
         _settingsVm = new SettingsViewModel(settingsService);
         _settingsPage = new SettingsPage(_settingsVm);
-        _themePage    = new ThemePage();
-        _editorPage   = new EditorPage();
+        _themePage = new ThemePage();
+        _editorPage = new EditorPage();
         SettingsView.Content = _settingsPage;
-        ThemeView.Content    = _themePage;
-        EditorView.Content   = _editorPage;
+        ThemeView.Content = _themePage;
+        EditorView.Content = _editorPage;
         PopulateScreenList();
 
         _settingsVm.HotkeyChanged += () =>
@@ -77,6 +111,11 @@ public partial class MainWindow : Window
             RegisterHotKey(hwnd, HOTKEY_STOP_OVERLAY,
                 _settingsVm.HotkeyModifiers, _settingsVm.HotkeyVirtualKey);
         };
+
+        _settingsVm.RefreshIntervalChanged += interval => _monitor.Start(interval);
+
+        _monitor.DataUpdated += OnDataUpdated;
+        _monitor.Start(settingsService.Settings.RefreshIntervalMs);
     }
 
     private void PopulateScreenList()
@@ -111,31 +150,31 @@ public partial class MainWindow : Window
         _currentNav = tag;
 
         DashboardView.Visibility = Vis(_currentNav == "dashboard");
-        ThemeView.Visibility     = Vis(_currentNav == "theme");
-        EditorView.Visibility    = Vis(_currentNav == "editor");
-        SettingsView.Visibility  = Vis(_currentNav == "settings");
+        ThemeView.Visibility = Vis(_currentNav == "theme");
+        EditorView.Visibility = Vis(_currentNav == "editor");
+        SettingsView.Visibility = Vis(_currentNav == "settings");
 
         NavDashboardIndicator.Visibility = Vis(_currentNav == "dashboard");
-        NavThemeIndicator.Visibility     = Vis(_currentNav == "theme");
-        NavEditorIndicator.Visibility    = Vis(_currentNav == "editor");
-        NavSettingsIndicator.Visibility  = Vis(_currentNav == "settings");
+        NavThemeIndicator.Visibility = Vis(_currentNav == "theme");
+        NavEditorIndicator.Visibility = Vis(_currentNav == "editor");
+        NavSettingsIndicator.Visibility = Vis(_currentNav == "settings");
 
         UpdateNavColors();
     }
 
     private void UpdateNavColors()
     {
-        var accent    = (System.Windows.Media.Brush)FindResource("Accent");
+        var accent = (System.Windows.Media.Brush)FindResource("Accent");
         var secondary = (System.Windows.Media.Brush)FindResource("TextSecondary");
 
-        NavDashboardIcon.Fill  = _currentNav == "dashboard" ? accent : secondary;
+        NavDashboardIcon.Fill = _currentNav == "dashboard" ? accent : secondary;
         NavDashboardLabel.Foreground = _currentNav == "dashboard" ? accent : secondary;
-        NavThemeIcon.Fill      = _currentNav == "theme"     ? accent : secondary;
-        NavThemeLabel.Foreground     = _currentNav == "theme"     ? accent : secondary;
-        NavEditorIcon.Fill     = _currentNav == "editor"    ? accent : secondary;
-        NavEditorLabel.Foreground    = _currentNav == "editor"    ? accent : secondary;
-        NavSettingsIcon.Fill   = _currentNav == "settings"  ? accent : secondary;
-        NavSettingsLabel.Foreground  = _currentNav == "settings"  ? accent : secondary;
+        NavThemeIcon.Fill = _currentNav == "theme" ? accent : secondary;
+        NavThemeLabel.Foreground = _currentNav == "theme" ? accent : secondary;
+        NavEditorIcon.Fill = _currentNav == "editor" ? accent : secondary;
+        NavEditorLabel.Foreground = _currentNav == "editor" ? accent : secondary;
+        NavSettingsIcon.Fill = _currentNav == "settings" ? accent : secondary;
+        NavSettingsLabel.Foreground = _currentNav == "settings" ? accent : secondary;
     }
 
     private static Visibility Vis(bool visible) =>
@@ -150,15 +189,15 @@ public partial class MainWindow : Window
     private void StartOverlay()
     {
         var screenIndex = ScreenSelector.SelectedIndex;
-        _overlay = new OverlayWindow(screenIndex, _settingsVm.OverlayAngle);
+        _overlay = new OverlayWindow(screenIndex, _settingsVm.OverlayAngle, _monitor, _settingsService);
         _overlay.Closed += OnOverlayClosed;
         _overlay.Show();
         _isOverlayRunning = true;
         OverlayBtnIcon.Data = _iconStop;
         OverlayBtnText.Text = "停止投放";
-        StatusDot.Fill  = (System.Windows.Media.Brush)FindResource("OkBrush");
+        StatusDot.Fill = (System.Windows.Media.Brush)FindResource("OkBrush");
         StatusText.Text = "投放中";
-        TitleDot.Fill   = (System.Windows.Media.Brush)FindResource("OkBrush");
+        TitleDot.Fill = (System.Windows.Media.Brush)FindResource("OkBrush");
 
         var hwnd = new WindowInteropHelper(this).Handle;
         RegisterHotKey(hwnd, HOTKEY_STOP_OVERLAY,
@@ -170,12 +209,12 @@ public partial class MainWindow : Window
     private void OnOverlayClosed(object? sender, EventArgs e)
     {
         UnregisterHotKey(new WindowInteropHelper(this).Handle, HOTKEY_STOP_OVERLAY);
-        _overlay          = null;
+        _overlay = null;
         _isOverlayRunning = false;
         OverlayBtnIcon.Data = _iconPlay;
         OverlayBtnText.Text = "开始投放";
-        StatusDot.Fill  = (System.Windows.Media.Brush)FindResource("TextSecondary");
+        StatusDot.Fill = (System.Windows.Media.Brush)FindResource("TextSecondary");
         StatusText.Text = "未投放";
-        TitleDot.Fill   = (System.Windows.Media.Brush)FindResource("DangerBrush");
+        TitleDot.Fill = (System.Windows.Media.Brush)FindResource("DangerBrush");
     }
 }

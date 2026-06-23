@@ -17,15 +17,15 @@ public class ThemeConfig
 
 public class ComponentConfig
 {
-    public string Type        { get; set; } = string.Empty;
-    public double X           { get; set; }
-    public double Y           { get; set; }
-    public double Width       { get; set; } = 200;
-    public double Height      { get; set; } = 40;
+    public string Type { get; set; } = string.Empty;
+    public double X { get; set; }
+    public double Y { get; set; }
+    public double Width { get; set; } = 200;
+    public double Height { get; set; } = 40;
     public string DataBinding { get; set; } = string.Empty;
-    public string Label       { get; set; } = string.Empty;  // 编辑器左侧列表名
-    public string Text        { get; set; } = string.Empty;  // 静态文字内容
-    public double FontSize    { get; set; } = 14;
-    public string FontColor   { get; set; } = "#FFFFFF";
-    public double Opacity     { get; set; } = 1.0;
+    public string Label { get; set; } = string.Empty;  // 编辑器左侧列表名
+    public string Text { get; set; } = string.Empty;  // 静态文字内容
+    public double FontSize { get; set; } = 14;
+    public string FontColor { get; set; } = "#FFFFFF";
+    public double Opacity { get; set; } = 1.0;
 }

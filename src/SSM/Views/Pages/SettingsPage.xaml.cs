@@ -22,9 +22,9 @@ public partial class SettingsPage : System.Windows.Controls.UserControl
     {
         RefreshRateCombo.SelectedIndex = _vm.RefreshIntervalMs switch
         {
-            500  => 0,
+            500 => 0,
             2000 => 2,
-            _    => 1
+            _ => 1
         };
     }
 
@@ -61,7 +61,7 @@ public partial class SettingsPage : System.Windows.Controls.UserControl
         var key = e.Key == Key.System ? e.SystemKey : e.Key;
 
         if (key is Key.LeftCtrl or Key.RightCtrl or Key.LeftShift or Key.RightShift
-               or Key.LeftAlt  or Key.RightAlt  or Key.LWin       or Key.RWin or Key.Tab)
+               or Key.LeftAlt or Key.RightAlt or Key.LWin or Key.RWin or Key.Tab)
             return;
 
         if (key == Key.Escape)
@@ -71,14 +71,14 @@ public partial class SettingsPage : System.Windows.Controls.UserControl
         }
 
         uint modifiers = 0;
-        if (Keyboard.IsKeyDown(Key.LeftCtrl)  || Keyboard.IsKeyDown(Key.RightCtrl))  modifiers |= 0x0002;
+        if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl)) modifiers |= 0x0002;
         if (Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift)) modifiers |= 0x0004;
-        if (Keyboard.IsKeyDown(Key.LeftAlt)   || Keyboard.IsKeyDown(Key.RightAlt))   modifiers |= 0x0001;
-        if (Keyboard.IsKeyDown(Key.LWin)      || Keyboard.IsKeyDown(Key.RWin))       modifiers |= 0x0008;
+        if (Keyboard.IsKeyDown(Key.LeftAlt) || Keyboard.IsKeyDown(Key.RightAlt)) modifiers |= 0x0001;
+        if (Keyboard.IsKeyDown(Key.LWin) || Keyboard.IsKeyDown(Key.RWin)) modifiers |= 0x0008;
 
         if (modifiers == 0) return;
 
-        var vk      = (uint)KeyInterop.VirtualKeyFromKey(key);
+        var vk = (uint)KeyInterop.VirtualKeyFromKey(key);
         var display = BuildDisplay(modifiers, key);
 
         _vm.UpdateHotkey(modifiers, vk, display);
@@ -102,15 +102,15 @@ public partial class SettingsPage : System.Windows.Controls.UserControl
     {
         >= Key.D0 and <= Key.D9 => ((char)('0' + (key - Key.D0))).ToString(),
         >= Key.NumPad0 and <= Key.NumPad9 => $"Num{key - Key.NumPad0}",
-        Key.OemPlus   => "=",
-        Key.OemMinus  => "-",
+        Key.OemPlus => "=",
+        Key.OemMinus => "-",
         Key.OemPeriod => ".",
-        Key.OemComma  => ",",
-        Key.Space     => "Space",
-        Key.Delete    => "Del",
-        Key.Insert    => "Ins",
-        Key.Prior     => "PgUp",
-        Key.Next      => "PgDn",
-        _             => key.ToString()
+        Key.OemComma => ",",
+        Key.Space => "Space",
+        Key.Delete => "Del",
+        Key.Insert => "Ins",
+        Key.Prior => "PgUp",
+        Key.Next => "PgDn",
+        _ => key.ToString()
     };
 }

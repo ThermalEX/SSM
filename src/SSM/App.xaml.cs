@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Media.Animation;
 using SSM.Core.Services;
 using SSM.Views;
+using SSM.Core.Interfaces;
 
 namespace SSM;
 
@@ -16,7 +17,8 @@ public partial class App : System.Windows.Application
 
         SwitchTheme(settingsService.Settings.ThemeName);
 
-        var mainWindow = new MainWindow(settingsService);
+        var monitor = new HardwareMonitorService();
+        var mainWindow = new MainWindow(settingsService, monitor);
         mainWindow.Show();
     }
 
@@ -29,17 +31,17 @@ public partial class App : System.Windows.Application
             return;
         }
 
-        var easeIn  = new CubicEase { EasingMode = EasingMode.EaseIn };
+        var easeIn = new CubicEase { EasingMode = EasingMode.EaseIn };
         var easeOut = new CubicEase { EasingMode = EasingMode.EaseOut };
 
         var fadeOut = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(180))
-            { EasingFunction = easeIn };
+        { EasingFunction = easeIn };
         fadeOut.Completed += (_, _) =>
         {
             ApplyTheme(name);
             content.BeginAnimation(UIElement.OpacityProperty,
                 new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(280))
-                    { EasingFunction = easeOut });
+                { EasingFunction = easeOut });
         };
         content.BeginAnimation(UIElement.OpacityProperty, fadeOut);
     }

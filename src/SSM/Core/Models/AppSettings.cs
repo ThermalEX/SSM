@@ -13,4 +13,8 @@ public class AppSettings
     public string HotkeyDisplay { get; set; } = "Ctrl + Shift + S";
     public uint HotkeyModifiers { get; set; } = 6;   // MOD_CONTROL | MOD_SHIFT
     public uint HotkeyVirtualKey { get; set; } = 0x53; // 'S'
+
+    public TemperatureUnit TemperatureUnit { get; set; } = TemperatureUnit.Celsius;
+    public MemoryUnit MemoryUnit { get; set; } = MemoryUnit.GB;
+    public NetworkSpeedUnit NetworkSpeedUnit { get; set; } = NetworkSpeedUnit.Auto;
 }

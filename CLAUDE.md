@@ -71,13 +71,16 @@ App.SwitchTheme("Light");  // 加载 Themes/LightTheme.xaml
 - 底部工具栏：背景设置（纯色/渐变/图片）、导出为 `.ssm-theme`、保存草稿
 - 实时预览：编辑时同步推送到正在运行的 `OverlayWindow`（若已开启投放）
 
-### 数据流（待完成）
+### 数据流
+
 ```
 LibreHardwareMonitor → HardwareMonitorService → DataUpdated 事件
-  → MainViewModel.HardwareData
-  → MainWindow / OverlayWindow 更新 UI 控件
+  → MainWindow.UpdateDashboard()   // 更新主界面卡片
+  → OverlayWindow.UpdateOverlay()  // 更新副屏 Overlay
 ```
-`HardwareMonitorService` 目前是空桩，使用 `System.Timers.Timer` 定时触发但不读取真实数据。接入 LibreHardwareMonitor 是下一个主要任务。
+`HardwareMonitorService` 在 `App.OnStartup` 中实例化并传入 `MainWindow`；`MainWindow` 构造时立即调用 `Start(intervalMs)`。刷新间隔由 `SettingsViewModel.RefreshIntervalChanged` 事件驱动，变更后调用 `Start(newInterval)` 重建 Timer（旧 Timer 先 Dispose）。
+
+**单位系统**：`HardwareData` 内部始终存储 LHM 原始单位（温度 °C、内存 GB、网速 B/s）。显示时通过 `Core/Helpers/UnitConverter` 按 `AppSettings` 中的 `TemperatureUnit`、`MemoryUnit`、`NetworkSpeedUnit` 格式化，不在 Service 层转换。
 
 ### 设置持久化
 `SettingsService` 将 `AppSettings` 序列化为 `Assets/settings.json`（相对于 exe 目录）。`AppSettings` 包含：
@@ -92,3 +95,21 @@ LibreHardwareMonitor → HardwareMonitorService → DataUpdated 事件
 
 ### 副屏投放
 `OverlayWindow` 通过 `System.Windows.Forms.Screen.AllScreens[index]` 定位到目标显示器，设置 `Left/Top/Width/Height` 实现全屏覆盖。`AllowsTransparency="True"` + 半透明背景，`Topmost="True"` 防止被遮挡。
+
+## 提交规范
+
+格式：`<type>: <中文描述>`
+
+| type | 用途 |
+| --- | --- |
+| `feat` | 新功能 |
+| `fix` | 缺陷修复 |
+| `refactor` | 重构（不改变行为） |
+| `chore` | 构建、依赖、配置等 |
+| `docs` | 仅文档变更 |
+
+**注意事项**：
+
+- 描述使用中文
+- 不添加 `Co-Authored-By` 等署名行
+- 每次只提交与本次改动相关的文件，不捎带无关的已修改文件

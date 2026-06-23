@@ -41,7 +41,7 @@ public partial class ThemeEditorWindow : Window
         }
         catch { _theme = new ThemeConfig(); }
 
-        Title          = $"主题编辑器 — {_theme.Name}";
+        Title = $"主题编辑器 — {_theme.Name}";
         BgColorBox.Text = _theme.Background;
         ApplyCanvasBackground();
 
@@ -66,7 +66,7 @@ public partial class ThemeEditorWindow : Window
         var json = JsonSerializer.Serialize(_theme, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(_filePath, json);
         _dirty = false;
-        Title  = $"主题编辑器 — {_theme.Name}";
+        Title = $"主题编辑器 — {_theme.Name}";
     }
 
     private void SaveButton_Click(object sender, RoutedEventArgs e) => Save();
@@ -76,7 +76,7 @@ public partial class ThemeEditorWindow : Window
         if (!_dirty) return;
         var result = System.Windows.MessageBox.Show("有未保存的更改，是否保存？",
             "保存主题", System.Windows.MessageBoxButton.YesNoCancel, System.Windows.MessageBoxImage.Question);
-        if (result == System.Windows.MessageBoxResult.Yes)    Save();
+        if (result == System.Windows.MessageBoxResult.Yes) Save();
         if (result == System.Windows.MessageBoxResult.Cancel) e.Cancel = true;
     }
 
@@ -87,9 +87,15 @@ public partial class ThemeEditorWindow : Window
         _textCount++;
         var comp = new ComponentConfig
         {
-            Type = "Text", Label = $"文字 {_textCount}",
-            Text = "示例文字", X = 100, Y = 100,
-            Width = 200, Height = 40, FontSize = 24, FontColor = "#FFFFFF",
+            Type = "Text",
+            Label = $"文字 {_textCount}",
+            Text = "示例文字",
+            X = 100,
+            Y = 100,
+            Width = 200,
+            Height = 40,
+            FontSize = 24,
+            FontColor = "#FFFFFF",
         };
         _theme.Components.Add(comp);
         AddElementToCanvas(comp);
@@ -102,8 +108,13 @@ public partial class ThemeEditorWindow : Window
         _progressCount++;
         var comp = new ComponentConfig
         {
-            Type = "ProgressBar", Label = $"进度条 {_progressCount}",
-            DataBinding = "CPU.Load", X = 100, Y = 160, Width = 400, Height = 24,
+            Type = "ProgressBar",
+            Label = $"进度条 {_progressCount}",
+            DataBinding = "CPU.Load",
+            X = 100,
+            Y = 160,
+            Width = 400,
+            Height = 24,
         };
         _theme.Components.Add(comp);
         AddElementToCanvas(comp);
@@ -116,9 +127,15 @@ public partial class ThemeEditorWindow : Window
         _sensorCount++;
         var comp = new ComponentConfig
         {
-            Type = "SensorText", Label = $"传感器 {_sensorCount}",
-            DataBinding = "CPU.Temperature", X = 100, Y = 220,
-            Width = 200, Height = 40, FontSize = 28, FontColor = "#FFFFFF",
+            Type = "SensorText",
+            Label = $"传感器 {_sensorCount}",
+            DataBinding = "CPU.Temperature",
+            X = 100,
+            Y = 220,
+            Width = 200,
+            Height = 40,
+            FontSize = 28,
+            FontColor = "#FFFFFF",
         };
         _theme.Components.Add(comp);
         AddElementToCanvas(comp);
@@ -130,7 +147,7 @@ public partial class ThemeEditorWindow : Window
     {
         var dlg = new Microsoft.Win32.OpenFileDialog
         {
-            Title  = "选择图片",
+            Title = "选择图片",
             Filter = "图片文件|*.png;*.jpg;*.jpeg;*.bmp;*.gif|所有文件|*.*",
         };
         if (dlg.ShowDialog() != true) return;
@@ -138,9 +155,14 @@ public partial class ThemeEditorWindow : Window
         _imageCount++;
         var comp = new ComponentConfig
         {
-            Type = "Image", Label = $"图片 {_imageCount}",
+            Type = "Image",
+            Label = $"图片 {_imageCount}",
             DataBinding = dlg.FileName,
-            X = 0, Y = 0, Width = 1920, Height = 1080, Opacity = 0.5,
+            X = 0,
+            Y = 0,
+            Width = 1920,
+            Height = 1080,
+            Opacity = 0.5,
         };
         _theme.Components.Add(comp);
         AddElementToCanvas(comp);
@@ -155,22 +177,22 @@ public partial class ThemeEditorWindow : Window
         var inner = BuildInnerControl(comp);
         var border = new Border
         {
-            Width           = comp.Width,
-            Height          = comp.Height,
-            Opacity         = comp.Opacity,
-            Child           = inner,
-            BorderBrush     = new System.Windows.Media.SolidColorBrush(
+            Width = comp.Width,
+            Height = comp.Height,
+            Opacity = comp.Opacity,
+            Child = inner,
+            BorderBrush = new System.Windows.Media.SolidColorBrush(
                 System.Windows.Media.Color.FromArgb(80, 255, 255, 255)),
             BorderThickness = new Thickness(1),
-            Tag             = comp,
-            Cursor          = System.Windows.Input.Cursors.SizeAll,
+            Tag = comp,
+            Cursor = System.Windows.Input.Cursors.SizeAll,
         };
 
         Canvas.SetLeft(border, comp.X);
-        Canvas.SetTop(border,  comp.Y);
+        Canvas.SetTop(border, comp.Y);
 
         border.MouseLeftButtonDown += Border_MouseLeftButtonDown;
-        border.MouseLeftButtonUp   += Border_MouseLeftButtonUp;
+        border.MouseLeftButtonUp += Border_MouseLeftButtonUp;
 
         CanvasArea.Children.Add(border);
 
@@ -184,54 +206,54 @@ public partial class ThemeEditorWindow : Window
         {
             case "Text":
             case "SensorText":
-            {
-                return new System.Windows.Controls.TextBlock
-                {
-                    Text                = comp.Type == "Text" ? comp.Text : $"[{comp.DataBinding}]",
-                    FontSize            = comp.FontSize,
-                    Foreground          = ParseBrush(comp.FontColor),
-                    VerticalAlignment   = System.Windows.VerticalAlignment.Center,
-                    HorizontalAlignment = System.Windows.HorizontalAlignment.Left,
-                    TextWrapping        = System.Windows.TextWrapping.Wrap,
-                };
-            }
-            case "ProgressBar":
-            {
-                return new System.Windows.Controls.ProgressBar
-                {
-                    Value           = 65,
-                    Maximum         = 100,
-                    Height          = comp.Height,
-                    Foreground      = ParseBrush("#0A84FF"),
-                    Background      = ParseBrush("#3A3A3C"),
-                    BorderThickness = new Thickness(0),
-                };
-            }
-            case "Image":
-            {
-                try
-                {
-                    return new System.Windows.Controls.Image
-                    {
-                        Source  = new System.Windows.Media.Imaging.BitmapImage(new Uri(comp.DataBinding)),
-                        Stretch = System.Windows.Media.Stretch.UniformToFill,
-                    };
-                }
-                catch
                 {
                     return new System.Windows.Controls.TextBlock
                     {
-                        Text                = "[图片]",
-                        Foreground          = System.Windows.Media.Brushes.Gray,
-                        VerticalAlignment   = System.Windows.VerticalAlignment.Center,
-                        HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
+                        Text = comp.Type == "Text" ? comp.Text : $"[{comp.DataBinding}]",
+                        FontSize = comp.FontSize,
+                        Foreground = ParseBrush(comp.FontColor),
+                        VerticalAlignment = System.Windows.VerticalAlignment.Center,
+                        HorizontalAlignment = System.Windows.HorizontalAlignment.Left,
+                        TextWrapping = System.Windows.TextWrapping.Wrap,
                     };
                 }
-            }
+            case "ProgressBar":
+                {
+                    return new System.Windows.Controls.ProgressBar
+                    {
+                        Value = 65,
+                        Maximum = 100,
+                        Height = comp.Height,
+                        Foreground = ParseBrush("#0A84FF"),
+                        Background = ParseBrush("#3A3A3C"),
+                        BorderThickness = new Thickness(0),
+                    };
+                }
+            case "Image":
+                {
+                    try
+                    {
+                        return new System.Windows.Controls.Image
+                        {
+                            Source = new System.Windows.Media.Imaging.BitmapImage(new Uri(comp.DataBinding)),
+                            Stretch = System.Windows.Media.Stretch.UniformToFill,
+                        };
+                    }
+                    catch
+                    {
+                        return new System.Windows.Controls.TextBlock
+                        {
+                            Text = "[图片]",
+                            Foreground = System.Windows.Media.Brushes.Gray,
+                            VerticalAlignment = System.Windows.VerticalAlignment.Center,
+                            HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
+                        };
+                    }
+                }
             default:
                 return new System.Windows.Controls.TextBlock
                 {
-                    Text       = comp.Type,
+                    Text = comp.Type,
                     Foreground = System.Windows.Media.Brushes.White,
                 };
         }
@@ -252,14 +274,14 @@ public partial class ThemeEditorWindow : Window
     private void Border_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (sender is not Border b) return;
-        _dragging   = true;
+        _dragging = true;
         _dragTarget = b;
-        _dragComp   = b.Tag as ComponentConfig;
+        _dragComp = b.Tag as ComponentConfig;
         _dragOffset = e.GetPosition(b);
         b.CaptureMouse();
         if (_dragComp != null) SelectElement(_dragComp);
         e.Handled = true;
-        CanvasArea.MouseMove         += Canvas_MouseMove;
+        CanvasArea.MouseMove += Canvas_MouseMove;
         CanvasArea.MouseLeftButtonUp += Canvas_GlobalMouseUp;
     }
 
@@ -278,7 +300,7 @@ public partial class ThemeEditorWindow : Window
         if (!_dragging) return;
         _dragging = false;
         b?.ReleaseMouseCapture();
-        CanvasArea.MouseMove         -= Canvas_MouseMove;
+        CanvasArea.MouseMove -= Canvas_MouseMove;
         CanvasArea.MouseLeftButtonUp -= Canvas_GlobalMouseUp;
     }
 
@@ -289,7 +311,7 @@ public partial class ThemeEditorWindow : Window
         double x = Math.Max(0, Math.Min(pos.X - _dragOffset.X, 1920 - _dragComp.Width));
         double y = Math.Max(0, Math.Min(pos.Y - _dragOffset.Y, 1080 - _dragComp.Height));
         Canvas.SetLeft(_dragTarget, x);
-        Canvas.SetTop(_dragTarget,  y);
+        Canvas.SetTop(_dragTarget, y);
         _dragComp.X = x;
         _dragComp.Y = y;
         UpdatePropertyPanel();
@@ -312,9 +334,9 @@ public partial class ThemeEditorWindow : Window
         {
             if (child is Border b && b.Tag == comp)
             {
-                _selectedBorder         = b;
-                b.BorderBrush           = (System.Windows.Media.Brush)FindResource("Accent");
-                b.BorderThickness       = new Thickness(2);
+                _selectedBorder = b;
+                b.BorderBrush = (System.Windows.Media.Brush)FindResource("Accent");
+                b.BorderThickness = new Thickness(2);
                 break;
             }
         }
@@ -332,16 +354,16 @@ public partial class ThemeEditorWindow : Window
     {
         if (_selectedBorder != null)
         {
-            _selectedBorder.BorderBrush     = new System.Windows.Media.SolidColorBrush(
+            _selectedBorder.BorderBrush = new System.Windows.Media.SolidColorBrush(
                 System.Windows.Media.Color.FromArgb(80, 255, 255, 255));
             _selectedBorder.BorderThickness = new Thickness(1);
             _selectedBorder = null;
         }
-        _selected                      = null;
-        ElementList.SelectedItem       = null;
+        _selected = null;
+        ElementList.SelectedItem = null;
         DeleteSelectedButton.IsEnabled = false;
-        NothingSelected.Visibility     = Visibility.Visible;
-        PanelPosition.Visibility       = Visibility.Collapsed;
+        NothingSelected.Visibility = Visibility.Visible;
+        PanelPosition.Visibility = Visibility.Collapsed;
     }
 
     private void ElementList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -374,11 +396,11 @@ public partial class ThemeEditorWindow : Window
         if (listItem != null) ElementList.Items.Remove(listItem);
 
         _theme.Components.Remove(_selected);
-        _selected                      = null;
-        _selectedBorder                = null;
+        _selected = null;
+        _selectedBorder = null;
         DeleteSelectedButton.IsEnabled = false;
-        NothingSelected.Visibility     = Visibility.Visible;
-        PanelPosition.Visibility       = Visibility.Collapsed;
+        NothingSelected.Visibility = Visibility.Visible;
+        PanelPosition.Visibility = Visibility.Collapsed;
         _dirty = true;
     }
 
@@ -392,27 +414,27 @@ public partial class ThemeEditorWindow : Window
         _updatingPanel = true;
 
         NothingSelected.Visibility = Visibility.Collapsed;
-        PanelPosition.Visibility   = Visibility.Visible;
+        PanelPosition.Visibility = Visibility.Visible;
 
         PropX.Text = ((int)_selected.X).ToString();
         PropY.Text = ((int)_selected.Y).ToString();
         PropW.Text = ((int)_selected.Width).ToString();
         PropH.Text = ((int)_selected.Height).ToString();
 
-        PropOpacity.Value     = _selected.Opacity;
+        PropOpacity.Value = _selected.Opacity;
         PropOpacityLabel.Text = _selected.Opacity.ToString("F2");
 
-        bool isText    = _selected.Type is "Text" or "SensorText";
-        bool isSensor  = _selected.Type is "SensorText" or "ProgressBar";
+        bool isText = _selected.Type is "Text" or "SensorText";
+        bool isSensor = _selected.Type is "SensorText" or "ProgressBar";
         bool isStaticT = _selected.Type == "Text";
 
-        PanelFont.Visibility    = isText    ? Visibility.Visible : Visibility.Collapsed;
-        PanelText.Visibility    = isStaticT ? Visibility.Visible : Visibility.Collapsed;
-        PanelBinding.Visibility = isSensor  ? Visibility.Visible : Visibility.Collapsed;
+        PanelFont.Visibility = isText ? Visibility.Visible : Visibility.Collapsed;
+        PanelText.Visibility = isStaticT ? Visibility.Visible : Visibility.Collapsed;
+        PanelBinding.Visibility = isSensor ? Visibility.Visible : Visibility.Collapsed;
 
-        if (isText)    { PropFontSize.Text  = _selected.FontSize.ToString("F0"); PropFontColor.Text = _selected.FontColor; }
-        if (isStaticT) PropText.Text    = _selected.Text;
-        if (isSensor)  PropBinding.Text = _selected.DataBinding;
+        if (isText) { PropFontSize.Text = _selected.FontSize.ToString("F0"); PropFontColor.Text = _selected.FontColor; }
+        if (isStaticT) PropText.Text = _selected.Text;
+        if (isSensor) PropBinding.Text = _selected.DataBinding;
 
         _updatingPanel = false;
     }
@@ -420,11 +442,11 @@ public partial class ThemeEditorWindow : Window
     private void ApplySelectedToCanvas()
     {
         if (_selectedBorder == null || _selected == null) return;
-        _selectedBorder.Width   = _selected.Width;
-        _selectedBorder.Height  = _selected.Height;
+        _selectedBorder.Width = _selected.Width;
+        _selectedBorder.Height = _selected.Height;
         _selectedBorder.Opacity = _selected.Opacity;
         Canvas.SetLeft(_selectedBorder, _selected.X);
-        Canvas.SetTop(_selectedBorder,  _selected.Y);
+        Canvas.SetTop(_selectedBorder, _selected.Y);
         _selectedBorder.Child = BuildInnerControl(_selected);
         _dirty = true;
     }
@@ -456,7 +478,7 @@ public partial class ThemeEditorWindow : Window
     private void PropOpacity_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
         if (_updatingPanel || _selected == null) return;
-        _selected.Opacity     = e.NewValue;
+        _selected.Opacity = e.NewValue;
         PropOpacityLabel.Text = e.NewValue.ToString("F2");
         ApplySelectedToCanvas();
     }

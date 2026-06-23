@@ -34,7 +34,7 @@ public partial class EditorPage : System.Windows.Controls.UserControl
             }
             catch { /* 跳过损坏文件 */ }
 
-            var name  = cfg?.Name ?? Path.GetFileNameWithoutExtension(file);
+            var name = cfg?.Name ?? Path.GetFileNameWithoutExtension(file);
             var count = cfg?.Components.Count ?? 0;
             ThemeCardPanel.Children.Add(BuildCard(file, name, count));
         }
@@ -48,15 +48,15 @@ public partial class EditorPage : System.Windows.Controls.UserControl
 
         var nameBlock = new System.Windows.Controls.TextBlock
         {
-            Text       = name,
-            FontSize   = 14,
+            Text = name,
+            FontSize = 14,
             FontWeight = FontWeights.SemiBold,
         };
         nameBlock.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "TextPrimary");
 
         var countBlock = new System.Windows.Controls.TextBlock
         {
-            Text   = $"{componentCount} 个组件",
+            Text = $"{componentCount} 个组件",
             FontSize = 11,
             Margin = new Thickness(0, 4, 0, 0),
         };
@@ -72,13 +72,13 @@ public partial class EditorPage : System.Windows.Controls.UserControl
 
         var deleteBtn = new System.Windows.Controls.Button
         {
-            Content         = "删除",
-            Background      = System.Windows.Media.Brushes.Transparent,
+            Content = "删除",
+            Background = System.Windows.Media.Brushes.Transparent,
             BorderThickness = new Thickness(0),
-            FontSize        = 12,
-            Cursor          = System.Windows.Input.Cursors.Hand,
-            Margin          = new Thickness(8, 0, 0, 0),
-            Padding         = new Thickness(4),
+            FontSize = 12,
+            Cursor = System.Windows.Input.Cursors.Hand,
+            Margin = new Thickness(8, 0, 0, 0),
+            Padding = new Thickness(4),
         };
         deleteBtn.SetResourceReference(System.Windows.Controls.Button.ForegroundProperty, "DangerBrush");
         deleteBtn.Click += (_, _) => DeleteTheme(filePath);
@@ -86,7 +86,7 @@ public partial class EditorPage : System.Windows.Controls.UserControl
         var btnRow = new System.Windows.Controls.StackPanel
         {
             Orientation = System.Windows.Controls.Orientation.Horizontal,
-            Margin      = new Thickness(0, 12, 0, 0),
+            Margin = new Thickness(0, 12, 0, 0),
         };
         btnRow.Children.Add(editBtn);
         btnRow.Children.Add(deleteBtn);
@@ -109,7 +109,7 @@ public partial class EditorPage : System.Windows.Controls.UserControl
 
     private void DeleteTheme(string filePath)
     {
-        var name   = Path.GetFileNameWithoutExtension(filePath);
+        var name = Path.GetFileNameWithoutExtension(filePath);
         var result = System.Windows.MessageBox.Show(
             $"确定要删除主题「{name}」吗？此操作不可撤销。",
             "删除主题",
@@ -127,7 +127,7 @@ public partial class EditorPage : System.Windows.Controls.UserControl
 
     private void NewThemeButton_Click(object sender, RoutedEventArgs e)
     {
-        NewThemeNameBox.Text     = string.Empty;
+        NewThemeNameBox.Text = string.Empty;
         NewThemePanel.Visibility = Visibility.Visible;
         NewThemeNameBox.Focus();
     }
@@ -141,7 +141,7 @@ public partial class EditorPage : System.Windows.Controls.UserControl
 
     private void NewThemeNameBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
-        if (e.Key == Key.Enter)  TryCreateTheme();
+        if (e.Key == Key.Enter) TryCreateTheme();
         if (e.Key == Key.Escape) NewThemePanel.Visibility = Visibility.Collapsed;
     }
 
@@ -156,7 +156,7 @@ public partial class EditorPage : System.Windows.Controls.UserControl
         Directory.CreateDirectory(ThemesDir);
         var path = Path.Combine(ThemesDir, $"{name}.json");
 
-        var cfg  = new ThemeConfig { Name = name };
+        var cfg = new ThemeConfig { Name = name };
         var json = JsonSerializer.Serialize(cfg, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(path, json);
 

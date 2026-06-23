@@ -20,6 +20,7 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private uint _hotkeyVirtualKey = 0x53;
 
     public event Action? HotkeyChanged;
+    public event Action<int>? RefreshIntervalChanged;
 
     public bool IsDarkTheme
     {
@@ -33,8 +34,8 @@ public partial class SettingsViewModel : ObservableObject
         set { if (value) ThemeName = "Light"; OnPropertyChanged(); OnPropertyChanged(nameof(IsDarkTheme)); }
     }
 
-    public bool IsAngle0   { get => OverlayAngle == 0;   set { if (value) OverlayAngle = 0;   OnPropertyChanged(); } }
-    public bool IsAngle90  { get => OverlayAngle == 90;  set { if (value) OverlayAngle = 90;  OnPropertyChanged(); } }
+    public bool IsAngle0 { get => OverlayAngle == 0; set { if (value) OverlayAngle = 0; OnPropertyChanged(); } }
+    public bool IsAngle90 { get => OverlayAngle == 90; set { if (value) OverlayAngle = 90; OnPropertyChanged(); } }
     public bool IsAngle180 { get => OverlayAngle == 180; set { if (value) OverlayAngle = 180; OnPropertyChanged(); } }
     public bool IsAngle270 { get => OverlayAngle == 270; set { if (value) OverlayAngle = 270; OnPropertyChanged(); } }
 
@@ -73,15 +74,17 @@ public partial class SettingsViewModel : ObservableObject
 
     partial void OnRefreshIntervalMsChanged(int value)
     {
-        if (!_loading) AutoSave();
+        if (_loading) return;
+        AutoSave();
+        RefreshIntervalChanged?.Invoke(value);
     }
 
     public void UpdateHotkey(uint modifiers, uint vk, string display)
     {
         _loading = true;
-        HotkeyModifiers   = modifiers;
-        HotkeyVirtualKey  = vk;
-        HotkeyDisplay     = display;
+        HotkeyModifiers = modifiers;
+        HotkeyVirtualKey = vk;
+        HotkeyDisplay = display;
         _loading = false;
         AutoSave();
         HotkeyChanged?.Invoke();
@@ -90,15 +93,15 @@ public partial class SettingsViewModel : ObservableObject
     private void AutoSave()
     {
         var s = _settingsService.Settings;
-        s.TargetScreenIndex  = TargetScreenIndex;
-        s.RefreshIntervalMs  = RefreshIntervalMs;
-        s.StartWithWindows   = StartWithWindows;
-        s.ActiveThemePath    = ActiveThemePath;
-        s.ThemeName          = ThemeName;
-        s.OverlayAngle       = OverlayAngle;
-        s.HotkeyDisplay      = HotkeyDisplay;
-        s.HotkeyModifiers    = HotkeyModifiers;
-        s.HotkeyVirtualKey   = HotkeyVirtualKey;
+        s.TargetScreenIndex = TargetScreenIndex;
+        s.RefreshIntervalMs = RefreshIntervalMs;
+        s.StartWithWindows = StartWithWindows;
+        s.ActiveThemePath = ActiveThemePath;
+        s.ThemeName = ThemeName;
+        s.OverlayAngle = OverlayAngle;
+        s.HotkeyDisplay = HotkeyDisplay;
+        s.HotkeyModifiers = HotkeyModifiers;
+        s.HotkeyVirtualKey = HotkeyVirtualKey;
         _settingsService.Save();
     }
 
@@ -108,13 +111,13 @@ public partial class SettingsViewModel : ObservableObject
         var s = _settingsService.Settings;
         TargetScreenIndex = s.TargetScreenIndex;
         RefreshIntervalMs = s.RefreshIntervalMs;
-        StartWithWindows  = s.StartWithWindows;
-        ActiveThemePath   = s.ActiveThemePath;
-        ThemeName         = s.ThemeName;
-        OverlayAngle      = s.OverlayAngle;
-        HotkeyDisplay     = s.HotkeyDisplay;
-        HotkeyModifiers   = s.HotkeyModifiers;
-        HotkeyVirtualKey  = s.HotkeyVirtualKey;
+        StartWithWindows = s.StartWithWindows;
+        ActiveThemePath = s.ActiveThemePath;
+        ThemeName = s.ThemeName;
+        OverlayAngle = s.OverlayAngle;
+        HotkeyDisplay = s.HotkeyDisplay;
+        HotkeyModifiers = s.HotkeyModifiers;
+        HotkeyVirtualKey = s.HotkeyVirtualKey;
         _loading = false;
     }
 }
