@@ -138,6 +138,14 @@ public partial class MainWindow : Window
         SettingsView.Content = _settingsPage;
         ThemeView.Content = _themePage;
         EditorView.Content = _editorPage;
+
+        // Wire pages that need hardware monitor access
+        _themePage.Initialize(settingsService);
+        _themePage.ThemeApplied += OnThemeApplied;
+
+        var activeSp2 = ResolveActiveSp2Path();
+        _editorPage.Initialize(_monitor, activeSp2);
+
         PopulateScreenList();
 
         _settingsVm.HotkeyChanged += () =>
@@ -875,5 +883,31 @@ public partial class MainWindow : Window
         if (_statusDot != null) _statusDot.Fill = (Brush)FindResource("TextSecondary");
         if (_statusText != null) _statusText.Text = "未投放";
         TitleDot.Fill = (Brush)FindResource("TextSecondary");
+    }
+
+    // ── Template helpers ────────────────────────────────────────
+
+    private string ResolveActiveSp2Path()
+    {
+        var rel  = _settingsService.Settings.ActiveSp2Template;
+        var full = System.IO.Path.GetFullPath(
+            System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, rel));
+        if (System.IO.File.Exists(full)) return full;
+
+        return System.IO.Path.Combine(
+            AppDomain.CurrentDomain.BaseDirectory,
+            "Themes", "monitor", "template", "2026-06-23.sp2");
+    }
+
+    private void OnThemeApplied(string sp2Path)
+    {
+        _editorPage.ReloadTemplate(sp2Path);
+        _themePage.Refresh();
+
+        if (_isOverlayRunning)
+        {
+            StopOverlay();
+            StartOverlay();
+        }
     }
 }
