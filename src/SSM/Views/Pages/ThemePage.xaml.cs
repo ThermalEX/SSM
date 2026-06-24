@@ -1,5 +1,4 @@
 using System.IO;
-using System.IO.Compression;
 using System.Windows;
 using System.Windows.Controls;
 using SSM.Core.Helpers;
@@ -54,16 +53,14 @@ public partial class ThemePage : UserControl
     private void Prev_Click(object sender, RoutedEventArgs e)
     {
         if (_themes.Count == 0) return;
-        int idx = (_previewIdx - 1 + _themes.Count) % _themes.Count;
-        ShowPreview(idx);
+        ShowPreview((_previewIdx - 1 + _themes.Count) % _themes.Count);
         SyncCombo();
     }
 
     private void Next_Click(object sender, RoutedEventArgs e)
     {
         if (_themes.Count == 0) return;
-        int idx = (_previewIdx + 1) % _themes.Count;
-        ShowPreview(idx);
+        ShowPreview((_previewIdx + 1) % _themes.Count);
         SyncCombo();
     }
 
@@ -78,11 +75,9 @@ public partial class ThemePage : UserControl
     {
         if (_previewIdx < 0 || _previewIdx >= _themes.Count) return;
         var sp2 = _themes[_previewIdx].Sp2Path;
-
         var rel = Path.GetRelativePath(AppDomain.CurrentDomain.BaseDirectory, sp2);
         _settingsService!.Settings.ActiveSp2Template = rel;
         _settingsService.Save();
-
         _activeSp2 = sp2;
         UpdateApplyButton();
         ThemeApplied?.Invoke(sp2);
@@ -100,12 +95,8 @@ public partial class ThemePage : UserControl
             ApplyBtn.IsEnabled = false;
             return;
         }
-
-        var (_, sp2) = _themes[idx];
-
         if (_monitor is not null)
-            Preview.Initialize(_monitor, sp2);
-
+            Preview.Initialize(_monitor, _themes[idx].Sp2Path);
         PrevBtn.IsEnabled = _themes.Count > 1;
         NextBtn.IsEnabled = _themes.Count > 1;
         UpdateApplyButton();
@@ -116,7 +107,6 @@ public partial class ThemePage : UserControl
         if (_previewIdx < 0 || _previewIdx >= _themes.Count) return;
         bool isCurrent = string.Equals(
             _themes[_previewIdx].Sp2Path, _activeSp2, StringComparison.OrdinalIgnoreCase);
-
         ApplyBtn.Content = isCurrent ? "✓ 当前使用" : "应用此主题";
         ApplyBtn.IsEnabled = !isCurrent;
         ApplyBtn.SetResourceReference(Button.StyleProperty,
@@ -134,7 +124,6 @@ public partial class ThemePage : UserControl
     {
         _themes.Clear();
         if (!Directory.Exists(MonitorThemesDir)) return;
-
         foreach (var dir in Directory.GetDirectories(MonitorThemesDir).OrderBy(d => d))
         {
             var sp2 = Directory.GetFiles(dir, "*.sp2").FirstOrDefault();
@@ -162,68 +151,24 @@ public partial class ThemePage : UserControl
 
     // ── File import (called by MainWindow's Win32FileDrop hook) ──
 
-    private static readonly string[] AcceptedExts = [".sp2", ".sensorpanel", ".spzip"];
-
     public void ImportFile(string path)
     {
-        var ext = Path.GetExtension(path).ToLowerInvariant();
-        if (!AcceptedExts.Contains(ext)) return;
-
+        if (!ThemeImporter.AcceptedExts.Contains(Path.GetExtension(path).ToLowerInvariant()))
+            return;
         string? importedSp2 = null;
-        try
-        {
-            importedSp2 = ext switch
-            {
-                ".sensorpanel" => SensorpanelImporter.Import(path, MonitorThemesDir),
-                ".spzip"       => ImportSpzip(path),
-                ".sp2"         => ImportSp2Dir(path),
-                _              => null
-            };
-        }
+        try { importedSp2 = ThemeImporter.Import(path, MonitorThemesDir); }
         catch (Exception ex)
         {
             MessageBox.Show($"导入失败：{ex.Message}", "错误",
                 MessageBoxButton.OK, MessageBoxImage.Error);
         }
-
         _activeSp2 = ResolveActiveSp2();
         ScanThemes();
         RebuildCombo();
-
         int idx = importedSp2 is not null
             ? _themes.FindIndex(t => string.Equals(t.Sp2Path, importedSp2, StringComparison.OrdinalIgnoreCase))
             : _previewIdx;
         ShowPreview(idx >= 0 ? idx : 0);
         SyncCombo();
-    }
-
-    private string ImportSpzip(string zipPath)
-    {
-        var name    = Path.GetFileNameWithoutExtension(zipPath);
-        var destDir = Path.Combine(MonitorThemesDir, name);
-        if (Directory.Exists(destDir)) Directory.Delete(destDir, true);
-        Directory.CreateDirectory(MonitorThemesDir);
-        ZipFile.ExtractToDirectory(zipPath, destDir);
-        return Directory.GetFiles(destDir, "*.sp2").FirstOrDefault()
-            ?? throw new InvalidDataException("压缩包中未找到 .sp2 文件");
-    }
-
-    private string ImportSp2Dir(string sp2Path)
-    {
-        var srcDir  = Path.GetDirectoryName(sp2Path)!;
-        var name    = Path.GetFileName(srcDir);
-        var destDir = Path.Combine(MonitorThemesDir, name);
-        if (Directory.Exists(destDir)) Directory.Delete(destDir, true);
-        CopyDirectory(srcDir, destDir);
-        return Path.Combine(destDir, Path.GetFileName(sp2Path));
-    }
-
-    private static void CopyDirectory(string src, string dst)
-    {
-        Directory.CreateDirectory(dst);
-        foreach (var file in Directory.GetFiles(src))
-            File.Copy(file, Path.Combine(dst, Path.GetFileName(file)), overwrite: true);
-        foreach (var dir in Directory.GetDirectories(src))
-            CopyDirectory(dir, Path.Combine(dst, Path.GetFileName(dir)));
     }
 }

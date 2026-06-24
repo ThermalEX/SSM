@@ -7,7 +7,7 @@ using UserControl = System.Windows.Controls.UserControl;
 using Button = System.Windows.Controls.Button;
 using SSM.Core.Helpers;
 using SSM.Core.Interfaces;
-using SSM.Views.Dialogs;
+using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 
 namespace SSM.Views.Pages;
 
@@ -208,10 +208,23 @@ public partial class EditorPage : UserControl
 
     private void Import_Click(object sender, RoutedEventArgs e)
     {
-        var dlg = new ImportDialog { Owner = Window.GetWindow(this) };
-        if (dlg.ShowDialog() != true || dlg.ImportedSp2Path is null) return;
+        var picker = new OpenFileDialog
+        {
+            Title  = "选择主题文件",
+            Filter = "主题文件 (*.sensorpanel;*.spzip;*.sp2)|*.sensorpanel;*.spzip;*.sp2|所有文件 (*.*)|*.*",
+        };
+        if (picker.ShowDialog() != true) return;
 
-        ApplyTheme(dlg.ImportedSp2Path);
+        try
+        {
+            var sp2 = ThemeImporter.Import(picker.FileName, MonitorThemesDir);
+            ApplyTheme(sp2);
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"导入失败：{ex.Message}", "错误",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+        }
     }
 
     // ── Helpers ───────────────────────────────────────
