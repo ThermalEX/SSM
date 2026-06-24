@@ -37,7 +37,7 @@ internal static class AudioVolumeReader
         {
             foreach (var (work, tcs) in _queue.GetConsumingEnumerable())
             {
-                try   { tcs.SetResult(work()); }
+                try { tcs.SetResult(work()); }
                 catch { tcs.SetResult(0f); }
             }
         }

@@ -244,7 +244,15 @@ public sealed class OverlayCanvasRenderer : IDisposable
         _graphCanvases[el.SensorId]  = gCanvas;
         _graphColors[el.SensorId]    = el.GraphColor != WpfColors.Transparent
             ? el.GraphColor : WpfColors.Cyan;
-        _graphHistories[el.SensorId] = new Queue<float>();
+
+        // Pre-fill history with the current sensor value so the graph is
+        // immediately meaningful instead of growing in from the right edge.
+        var history = new Queue<float>();
+        float initVal = SensorValue(el.SensorId, _monitor.CurrentData ?? new());
+        if (!float.IsNaN(initVal))
+            for (int i = 0; i < HistoryLen; i++)
+                history.Enqueue(initVal);
+        _graphHistories[el.SensorId] = history;
     }
 
     // ── BAR / plain sensor text ───────────────────────────────
@@ -281,25 +289,29 @@ public sealed class OverlayCanvasRenderer : IDisposable
     private static void RedrawGraph(Canvas gCanvas, Queue<float> history, WpfColor lineColor)
     {
         gCanvas.Children.Clear();
-        if (history.Count < 2) return;
+        if (history.Count == 0) return;
 
-        double w = gCanvas.Width;
-        double h = gCanvas.Height;
-        var pts  = history.ToArray();
-        int n    = pts.Length;
-        double step = w / (HistoryLen - 1);
+        double w     = gCanvas.Width;
+        double h     = gCanvas.Height;
+        var pts      = history.ToArray();
+        int n        = pts.Length;
+        double barW  = w / HistoryLen;
+        var brush    = new SolidColorBrush(lineColor);
+        double gap   = Math.Max(0, barW * 0.15); // 15% inter-bar gap
 
-        var points = new PointCollection(n);
         for (int i = 0; i < n; i++)
-            points.Add(new Point((HistoryLen - n + i) * step, h - (pts[i] / 100.0) * h));
-
-        gCanvas.Children.Add(new Polyline
         {
-            Points          = points,
-            Stroke          = new SolidColorBrush(lineColor),
-            StrokeThickness = 2,
-            StrokeLineJoin  = PenLineJoin.Round
-        });
+            double barH = Math.Max(1, (pts[i] / 100.0) * h);
+            var rect = new Rectangle
+            {
+                Width  = Math.Max(1, barW - gap),
+                Height = barH,
+                Fill   = brush
+            };
+            Canvas.SetLeft(rect, (HistoryLen - n + i) * barW);
+            Canvas.SetTop(rect, h - barH);
+            gCanvas.Children.Add(rect);
+        }
     }
 
     private static void EnqueueHistory(Queue<float> q, float value)
