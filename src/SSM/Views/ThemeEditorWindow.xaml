@@ -197,7 +197,7 @@
                             <ScaleTransform x:Name="CanvasScale" ScaleX="1" ScaleY="1"/>
                         </Grid.LayoutTransform>
                         <!-- 实际 sp2 渲染层 -->
-                        <Canvas x:Name="RenderCanvas" Width="1024" Height="600" ClipToBounds="True"/>
+                        <Canvas x:Name="RenderCanvas" Width="1024" Height="600"/>
                         <!-- 透明交互选择层（覆盖在渲染层之上） -->
                         <Canvas x:Name="SelectionCanvas" Width="1024" Height="600"
                                 Background="Transparent"

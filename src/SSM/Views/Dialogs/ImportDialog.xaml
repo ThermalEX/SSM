@@ -36,9 +36,6 @@
             <!-- 拖放区 -->
             <Border Grid.Row="1" Margin="20,16,20,8" CornerRadius="8"
                     x:Name="DropZone" Cursor="Hand"
-                    AllowDrop="True"
-                    DragOver="DropZone_DragOver"
-                    Drop="DropZone_Drop"
                     MouseLeftButtonUp="DropZone_Click">
                 <Border.Background>
                     <SolidColorBrush Color="Transparent"/>

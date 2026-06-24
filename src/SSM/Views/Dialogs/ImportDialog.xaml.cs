@@ -1,9 +1,10 @@
 using System.IO;
 using System.IO.Compression;
 using System.Windows;
+using System.Windows.Interop;
 using Microsoft.Win32;
 using SSM.Core.Helpers;
-using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
+using OpenFileDialog   = Microsoft.Win32.OpenFileDialog;
 using MessageBoxResult = System.Windows.MessageBoxResult;
 
 namespace SSM.Views.Dialogs;
@@ -17,36 +18,28 @@ public partial class ImportDialog : Window
 
     public string? ImportedSp2Path { get; private set; }
 
+    private HwndSourceHook? _dropHook;
+
     public ImportDialog()
     {
         InitializeComponent();
     }
 
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        var hwnd = new WindowInteropHelper(this).Handle;
+        _dropHook = Win32FileDrop.Install(hwnd, files =>
+        {
+            var file = files.FirstOrDefault(f =>
+                AcceptedExts.Contains(Path.GetExtension(f).ToLowerInvariant()));
+            if (file is not null)
+                Dispatcher.Invoke(() => TryImport(file));
+        });
+        HwndSource.FromHwnd(hwnd).AddHook(_dropHook);
+    }
+
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
-
-    private void DropZone_DragOver(object sender, System.Windows.DragEventArgs e)
-    {
-        if (HasAcceptedFile(e))
-        {
-            e.Effects = System.Windows.DragDropEffects.Copy;
-            e.Handled = true;
-        }
-        else
-        {
-            e.Effects = System.Windows.DragDropEffects.None;
-            e.Handled = true;
-        }
-    }
-
-    private void DropZone_Drop(object sender, System.Windows.DragEventArgs e)
-    {
-        if (!HasAcceptedFile(e)) return;
-        var files = (string[])e.Data.GetData(System.Windows.DataFormats.FileDrop)!;
-        var file = files.FirstOrDefault(f =>
-            AcceptedExts.Contains(Path.GetExtension(f).ToLowerInvariant()));
-        if (file is not null)
-            TryImport(file);
-    }
 
     private void DropZone_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
@@ -64,20 +57,12 @@ public partial class ImportDialog : Window
         var ext = Path.GetExtension(path).ToLowerInvariant();
         try
         {
-            string sp2;
-            if (ext == ".sensorpanel")
+            string sp2 = ext switch
             {
-                sp2 = ImportSensorpanel(path);
-            }
-            else if (ext == ".spzip")
-            {
-                sp2 = ImportSpzip(path);
-            }
-            else
-            {
-                sp2 = ImportSp2Dir(path);
-            }
-
+                ".sensorpanel" => ImportSensorpanel(path),
+                ".spzip"       => ImportSpzip(path),
+                _              => ImportSp2Dir(path),
+            };
             ImportedSp2Path = sp2;
             DialogResult = true;
             Close();
@@ -158,12 +143,5 @@ public partial class ImportDialog : Window
     {
         ErrorText.Text = msg;
         ErrorText.Visibility = Visibility.Visible;
-    }
-
-    private static bool HasAcceptedFile(System.Windows.DragEventArgs e)
-    {
-        if (!e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop)) return false;
-        var files = (string[])e.Data.GetData(System.Windows.DataFormats.FileDrop)!;
-        return files.Any(f => AcceptedExts.Contains(Path.GetExtension(f).ToLowerInvariant()));
     }
 }

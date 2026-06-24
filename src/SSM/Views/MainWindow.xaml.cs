@@ -86,13 +86,29 @@ public partial class MainWindow : Window
     private const int DWMWCP_ROUND = 2;
     private const int HOTKEY_STOP_OVERLAY = 9001;
 
+    private HwndSourceHook? _fileDropHook;
+
     protected override void OnSourceInitialized(EventArgs e)
     {
         base.OnSourceInitialized(e);
         var hwnd = new WindowInteropHelper(this).Handle;
         var pref = DWMWCP_ROUND;
         DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, ref pref, 4);
-        HwndSource.FromHwnd(hwnd).AddHook(WndProc);
+
+        // Win32 WM_DROPFILES: bypasses UIPI and AllowsTransparency limitations
+        _fileDropHook = Win32FileDrop.Install(hwnd, files =>
+        {
+            if (_currentNav != "theme") return;
+            var file = System.Array.Find(files, f =>
+                new[] { ".sp2", ".sensorpanel", ".spzip" }.Contains(
+                    System.IO.Path.GetExtension(f).ToLowerInvariant()));
+            if (file is not null)
+                Dispatcher.Invoke(() => _themePage.ImportFile(file));
+        });
+
+        var src = HwndSource.FromHwnd(hwnd);
+        src.AddHook(WndProc);
+        src.AddHook(_fileDropHook);
     }
 
     protected override void OnClosed(EventArgs e)
@@ -312,8 +328,8 @@ public partial class MainWindow : Window
         _dropTargetId = newTarget;
         _dropBefore   = newBefore;
 
-        if (newTarget is not null && _cardCache.TryGetValue(newTarget, out var tc))
-            ShowDropLine(tc, newBefore);
+        if (newTarget is not null)
+            ShowDropLineAtGap(ghostId, newTarget, newBefore);
         else
             HideDropLine();
     }
@@ -380,30 +396,86 @@ public partial class MainWindow : Window
                 var rect = new Rect(tl.X, tl.Y, card.ActualWidth, card.ActualHeight);
                 if (!rect.Contains(pos)) continue;
                 targetId = id;
-                before   = pos.X < rect.X + rect.Width / 2;
+                // Hysteresis: widen the dead-band when already hovering this card
+                // to prevent the drop-line from flickering near the midpoint.
+                if (_dropTargetId == id)
+                    before = _dropBefore ? pos.X < rect.X + rect.Width * 0.65
+                                         : pos.X < rect.X + rect.Width * 0.35;
+                else
+                    before = pos.X < rect.X + rect.Width * 0.50;
                 return;
             }
             catch { }
         }
     }
 
-    // Show a thin vertical indicator line on the overlay canvas (no grid layout change).
-    private void ShowDropLine(Border targetCard, bool before)
+    // Show the indicator in the CENTER of the gap between two adjacent cards.
+    private void ShowDropLineAtGap(string ghostId, string targetId, bool before)
     {
+        var visibleIds = _widgetOrder
+            .Where(id => !_hiddenWidgets.Contains(id) && id != ghostId)
+            .ToList();
+
+        int tIdx = visibleIds.IndexOf(targetId);
+        if (tIdx < 0) { HideDropLine(); return; }
+
+        // slotIdx: 0 = before first card, n = after last card
+        int slotIdx = before ? tIdx : tIdx + 1;
+
+        _cardCache.TryGetValue(slotIdx > 0 ? visibleIds[slotIdx - 1] : "", out var leftCard);
+        _cardCache.TryGetValue(slotIdx < visibleIds.Count ? visibleIds[slotIdx] : "", out var rightCard);
+
+        if (leftCard is null && rightCard is null) { HideDropLine(); return; }
+
         if (_dropLine is null)
         {
             _dropLine = new Border { Width = 3, CornerRadius = new CornerRadius(2), IsHitTestVisible = false };
             _dropLine.SetResourceReference(Border.BackgroundProperty, "Accent");
             DropIndicatorCanvas.Children.Add(_dropLine);
         }
+
         try
         {
-            var tl    = targetCard.TransformToVisual(DropIndicatorCanvas).Transform(default);
-            double h  = targetCard.ActualHeight * 0.75;
-            double x  = before ? tl.X - 1.5 : tl.X + targetCard.ActualWidth - 1.5;
-            Canvas.SetLeft(_dropLine, x);
-            Canvas.SetTop(_dropLine, tl.Y + targetCard.ActualHeight * 0.125);
-            _dropLine.Height     = h;
+            double lineX, lineY, lineH;
+
+            if (leftCard is not null && rightCard is not null)
+            {
+                var ltl = leftCard.TransformToVisual(DropIndicatorCanvas).Transform(default);
+                var rtl = rightCard.TransformToVisual(DropIndicatorCanvas).Transform(default);
+                bool sameRow = Math.Abs(ltl.Y - rtl.Y) < leftCard.ActualHeight * 0.5;
+                if (sameRow)
+                {
+                    // Center of horizontal gap
+                    lineX = (ltl.X + leftCard.ActualWidth + rtl.X) / 2;
+                    lineY = ltl.Y + leftCard.ActualHeight * 0.125;
+                    lineH = leftCard.ActualHeight * 0.75;
+                }
+                else
+                {
+                    // Wrap to next row: show at left of first card on new row
+                    lineX = rtl.X;
+                    lineY = rtl.Y + rightCard.ActualHeight * 0.125;
+                    lineH = rightCard.ActualHeight * 0.75;
+                }
+            }
+            else if (leftCard is not null)
+            {
+                var ltl = leftCard.TransformToVisual(DropIndicatorCanvas).Transform(default);
+                lineX = ltl.X + leftCard.ActualWidth;
+                lineY = ltl.Y + leftCard.ActualHeight * 0.125;
+                lineH = leftCard.ActualHeight * 0.75;
+            }
+            else
+            {
+                var rtl = rightCard!.TransformToVisual(DropIndicatorCanvas).Transform(default);
+                lineX = rtl.X;
+                lineY = rtl.Y + rightCard.ActualHeight * 0.125;
+                lineH = rightCard.ActualHeight * 0.75;
+            }
+
+            Canvas.SetLeft(_dropLine, lineX - 1.5);
+            Canvas.SetTop(_dropLine, lineY);
+            _dropLine.Height     = lineH;
             _dropLine.Visibility = Visibility.Visible;
         }
         catch { _dropLine.Visibility = Visibility.Collapsed; }
