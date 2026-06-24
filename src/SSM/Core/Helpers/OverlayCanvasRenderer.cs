@@ -387,7 +387,7 @@ public sealed class OverlayCanvasRenderer : IDisposable
                             => data.Motherboard.Temperature,
 
         // ── Audio ─────────────────────────────────────────────────
-        "SVOL" or "SVOL1" or "SVOLUME"
+        "SVOL" or "SVOL1" or "SVOLUME" or "SMASTVOL"
                             => data.Audio.Volume,
 
         _                   => float.NaN
@@ -406,7 +406,7 @@ public sealed class OverlayCanvasRenderer : IDisposable
             var s when s.EndsWith("CLK")                             => " MHz",
             var s when s.StartsWith("F") && !s.StartsWith("FREE")   => " RPM",
             var s when s.StartsWith("SNIC")                          => " B/s",
-            var s when s is "SVOL" or "SVOL1" or "SVOLUME"          => "%",
+            var s when s is "SVOL" or "SVOL1" or "SVOLUME" or "SMASTVOL" => "%",
             var s when s.StartsWith("SMEM") || s.StartsWith("SUSEDMEM")
                       || s.StartsWith("SFREEMEM") || s.StartsWith("STOTALMEM")
                                                                      => " MB",
