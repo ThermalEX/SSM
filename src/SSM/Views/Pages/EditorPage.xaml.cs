@@ -120,10 +120,46 @@ public partial class EditorPage : UserControl
             RefreshCards();
         };
 
+        // Delete button
+        var delBtn = new Button
+        {
+            Content = "删除",
+            Padding = new Thickness(0, 5, 0, 5),
+            Margin  = new Thickness(0, 4, 0, 0),
+        };
+        delBtn.SetResourceReference(Button.StyleProperty, "SecondaryButton");
+        var capturedDir = dir;
+        var capturedName = name;
+        delBtn.Click += (_, _) =>
+        {
+            var r = System.Windows.MessageBox.Show(
+                $"确定删除主题「{capturedName}」？此操作不可撤销。",
+                "删除主题", System.Windows.MessageBoxButton.OKCancel,
+                System.Windows.MessageBoxImage.Warning);
+            if (r != System.Windows.MessageBoxResult.OK) return;
+
+            // If this is the active theme, clear the setting
+            if (isActive && _settingsService is not null)
+            {
+                _settingsService.Settings.ActiveSp2Template = "";
+                _settingsService.Save();
+            }
+
+            try { Directory.Delete(capturedDir, recursive: true); }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"删除失败：{ex.Message}", "错误",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                return;
+            }
+            RefreshCards();
+        };
+
         var info = new StackPanel { Margin = new Thickness(10) };
         info.Children.Add(nameTb);
         info.Children.Add(applyBtn);
         info.Children.Add(openBtn);
+        info.Children.Add(delBtn);
 
         var layout = new StackPanel();
         layout.Children.Add(thumb);

@@ -55,12 +55,15 @@
                                IsHitTestVisible="False"/>
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" IsHitTestVisible="False">
                         <TextBlock Text="📦" FontSize="28" HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                        <TextBlock Text="拖入 .spzip 文件" FontSize="13"
+                        <TextBlock Text="拖入主题文件" FontSize="13"
                                    Foreground="{DynamicResource TextPrimary}"
                                    HorizontalAlignment="Center"/>
+                        <TextBlock Text=".spzip / .sensorpanel / .sp2" FontSize="11"
+                                   Foreground="{DynamicResource TextSecondary}"
+                                   HorizontalAlignment="Center" Margin="0,2,0,2"/>
                         <TextBlock Text="或点击此处选择文件" FontSize="11"
                                    Foreground="{DynamicResource TextSecondary}"
-                                   HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                   HorizontalAlignment="Center" Margin="0,2,0,0"/>
                     </StackPanel>
                 </Grid>
             </Border>

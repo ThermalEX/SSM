@@ -3,8 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ctrl="clr-namespace:SSM.Views.Controls">
     <Grid AllowDrop="True"
-          DragOver="Page_DragOver"
-          Drop="Page_Drop">
+          PreviewDragOver="Page_DragOver"
+          PreviewDrop="Page_Drop">
         <Grid.RowDefinitions>
             <RowDefinition Height="48"/>
             <RowDefinition Height="*"/>

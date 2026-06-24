@@ -4,12 +4,6 @@ using System.Text.RegularExpressions;
 
 namespace SSM.Core.Helpers;
 
-/// <summary>
-/// Imports AIDA64 .sensorpanel files.
-/// A .sensorpanel is sp2-compatible XML (UTF-16 LE) where image files are embedded
-/// inline as hex strings in &lt;IMGDAT&gt; tags. This class extracts those images
-/// and writes a standard .sp2 file alongside them so OverlayCanvasRenderer can load it.
-/// </summary>
 public static class SensorpanelImporter
 {
     private static readonly Regex ImgFilRx =
@@ -17,27 +11,20 @@ public static class SensorpanelImporter
     private static readonly Regex ImgDatRx =
         new(@"<IMGDAT>([0-9A-Fa-f]+)</IMGDAT>", RegexOptions.Compiled);
 
-    /// <summary>
-    /// Imports a .sensorpanel file into <paramref name="themesBaseDir"/>.
-    /// Returns the path of the created .sp2 file, or throws on error.
-    /// </summary>
     public static string Import(string sensorpanelPath, string themesBaseDir)
     {
         var themeName = Path.GetFileNameWithoutExtension(sensorpanelPath);
         var destDir   = Path.Combine(themesBaseDir, themeName);
         Directory.CreateDirectory(destDir);
 
-        // .sensorpanel is UTF-16 LE (same as .sp2); fall back to UTF-8
-        string raw;
-        try   { raw = File.ReadAllText(sensorpanelPath, Encoding.Unicode); }
-        catch { raw = File.ReadAllText(sensorpanelPath, Encoding.UTF8); }
+        var enc  = DetectEncoding(sensorpanelPath);
+        var raw  = File.ReadAllText(sensorpanelPath, enc);
 
-        var outLines  = new List<string>();
+        var outLines   = new List<string>();
         string lastFil = "";
 
         foreach (var line in raw.Split('\n'))
         {
-            // Track the most recent IMGFIL on this line
             var filMatch = ImgFilRx.Match(line);
             if (filMatch.Success)
                 lastFil = filMatch.Groups[1].Value.Trim();
@@ -45,35 +32,57 @@ public static class SensorpanelImporter
             var datMatch = ImgDatRx.Match(line);
             if (datMatch.Success)
             {
-                // Save the embedded image
-                var targetFil = filMatch.Success
-                    ? filMatch.Groups[1].Value.Trim()
-                    : lastFil;
+                var origFil  = filMatch.Success ? filMatch.Groups[1].Value.Trim() : lastFil;
+                var baseName = string.IsNullOrEmpty(origFil) ? null : Path.GetFileName(origFil);
 
-                if (!string.IsNullOrEmpty(targetFil))
+                if (!string.IsNullOrEmpty(baseName))
                 {
                     try
                     {
-                        var bytes = Convert.FromHexString(datMatch.Groups[1].Value);
-                        File.WriteAllBytes(Path.Combine(destDir, targetFil), bytes);
+                        var bytes = Convert.FromHexString(datMatch.Groups[1].Value.Trim());
+                        File.WriteAllBytes(Path.Combine(destDir, baseName), bytes);
                     }
                     catch { /* skip corrupt data */ }
                 }
 
-                // Strip IMGDAT from the line; keep the rest (config tags)
+                // Strip IMGDAT; normalize IMGFIL to base filename
                 var cleaned = ImgDatRx.Replace(line, "").TrimEnd('\r');
-                if (cleaned.Length > 0)
+                if (!string.IsNullOrEmpty(baseName) && baseName != origFil)
+                    cleaned = ImgFilRx.Replace(cleaned, $"<IMGFIL>{baseName}</IMGFIL>");
+                if (cleaned.Trim().Length > 0)
                     outLines.Add(cleaned);
             }
             else
             {
-                outLines.Add(line.TrimEnd('\r'));
+                // Normalize any IMGFIL paths on non-IMGDAT lines
+                var processedLine = line.TrimEnd('\r');
+                if (filMatch.Success)
+                {
+                    var origFil  = filMatch.Groups[1].Value.Trim();
+                    var baseName = Path.GetFileName(origFil);
+                    if (baseName != origFil)
+                        processedLine = ImgFilRx.Replace(processedLine, $"<IMGFIL>{baseName}</IMGFIL>");
+                }
+                outLines.Add(processedLine);
             }
         }
 
-        // Write cleaned content as UTF-16 LE .sp2
+        // Write cleaned content as UTF-16 LE .sp2 (our standard format)
         var sp2Path = Path.Combine(destDir, themeName + ".sp2");
         File.WriteAllText(sp2Path, string.Join('\n', outLines), Encoding.Unicode);
         return sp2Path;
+    }
+
+    // Detect whether the file is UTF-16 LE or UTF-8 by inspecting the first bytes.
+    // AIDA64 .sp2 files are UTF-16 LE (first char is '<' = 3C 00).
+    // Some .sensorpanel exports are plain UTF-8 (first byte is 0x3C '<').
+    private static Encoding DetectEncoding(string path)
+    {
+        Span<byte> header = stackalloc byte[4];
+        using var fs = File.OpenRead(path);
+        int n = fs.Read(header);
+        if (n >= 2 && header[0] == 0xFF && header[1] == 0xFE) return Encoding.Unicode;   // UTF-16 LE BOM
+        if (n >= 2 && header[0] == 0x3C && header[1] == 0x00) return Encoding.Unicode;   // UTF-16 LE, no BOM
+        return Encoding.UTF8;
     }
 }
