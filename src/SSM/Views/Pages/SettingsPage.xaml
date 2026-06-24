@@ -124,7 +124,7 @@
                     </StackPanel>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                         <RadioButton Style="{DynamicResource ThemeRadioButton}" GroupName="FitMode"
-                                     Content="以最长边定" IsChecked="{Binding IsFitFit, Mode=TwoWay}"/>
+                                     Content="默认" IsChecked="{Binding IsFitFit, Mode=TwoWay}"/>
                         <RadioButton Style="{DynamicResource ThemeRadioButton}" GroupName="FitMode"
                                      Content="居中"       IsChecked="{Binding IsFitCenter, Mode=TwoWay}"/>
                         <RadioButton Style="{DynamicResource ThemeRadioButton}" GroupName="FitMode"
