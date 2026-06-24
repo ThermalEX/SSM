@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using SSM.Core.Interfaces;
+using SSM.Core.Models;
 using SSM.Helpers;
 
 namespace SSM.ViewModels;
@@ -18,6 +19,7 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _hotkeyDisplay = "Ctrl + Shift + S";
     [ObservableProperty] private uint _hotkeyModifiers = 6;
     [ObservableProperty] private uint _hotkeyVirtualKey = 0x53;
+    [ObservableProperty] private OverlayFitMode _fitMode = OverlayFitMode.Fit;
 
     public event Action? HotkeyChanged;
     public event Action<int>? RefreshIntervalChanged;
@@ -39,6 +41,10 @@ public partial class SettingsViewModel : ObservableObject
     public bool IsAngle180 { get => OverlayAngle == 180; set { if (value) OverlayAngle = 180; OnPropertyChanged(); } }
     public bool IsAngle270 { get => OverlayAngle == 270; set { if (value) OverlayAngle = 270; OnPropertyChanged(); } }
 
+    public bool IsFitFit     { get => FitMode == OverlayFitMode.Fit;     set { if (value) FitMode = OverlayFitMode.Fit;     OnPropertyChanged(); } }
+    public bool IsFitCenter  { get => FitMode == OverlayFitMode.Center;  set { if (value) FitMode = OverlayFitMode.Center;  OnPropertyChanged(); } }
+    public bool IsFitStretch { get => FitMode == OverlayFitMode.Stretch; set { if (value) FitMode = OverlayFitMode.Stretch; OnPropertyChanged(); } }
+
     public SettingsViewModel(ISettingsService settingsService)
     {
         _settingsService = settingsService;
@@ -59,6 +65,14 @@ public partial class SettingsViewModel : ObservableObject
         OnPropertyChanged(nameof(IsAngle90));
         OnPropertyChanged(nameof(IsAngle180));
         OnPropertyChanged(nameof(IsAngle270));
+        if (!_loading) AutoSave();
+    }
+
+    partial void OnFitModeChanged(OverlayFitMode value)
+    {
+        OnPropertyChanged(nameof(IsFitFit));
+        OnPropertyChanged(nameof(IsFitCenter));
+        OnPropertyChanged(nameof(IsFitStretch));
         if (!_loading) AutoSave();
     }
 
@@ -102,6 +116,7 @@ public partial class SettingsViewModel : ObservableObject
         s.HotkeyDisplay = HotkeyDisplay;
         s.HotkeyModifiers = HotkeyModifiers;
         s.HotkeyVirtualKey = HotkeyVirtualKey;
+        s.FitMode = FitMode;
         _settingsService.Save();
     }
 
@@ -118,6 +133,7 @@ public partial class SettingsViewModel : ObservableObject
         HotkeyDisplay = s.HotkeyDisplay;
         HotkeyModifiers = s.HotkeyModifiers;
         HotkeyVirtualKey = s.HotkeyVirtualKey;
+        FitMode = s.FitMode;
         _loading = false;
     }
 }

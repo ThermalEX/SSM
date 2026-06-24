@@ -84,7 +84,8 @@
             <TextBlock Text="显示" FontSize="11" FontWeight="SemiBold"
                        Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,8"/>
 
-            <Border Style="{DynamicResource CardBorder}" Margin="0,0,0,16">
+            <Border Style="{DynamicResource CardBorder}" Margin="0,0,0,1"
+                    BorderThickness="1,1,1,0" CornerRadius="8,8,0,0">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -104,6 +105,30 @@
                                      Content="180°" IsChecked="{Binding IsAngle180, Mode=TwoWay}"/>
                         <RadioButton Style="{DynamicResource ThemeRadioButton}" GroupName="Angle"
                                      Content="270°" IsChecked="{Binding IsAngle270, Mode=TwoWay}"
+                                     Margin="0"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Border Style="{DynamicResource CardBorder}" Margin="0,1,0,16"
+                    BorderThickness="1,0,1,1" CornerRadius="0,0,8,8">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <TextBlock Text="适配方式" FontSize="13" Foreground="{DynamicResource TextPrimary}"/>
+                        <TextBlock Text="主题画面在屏幕上的缩放规则" FontSize="11"
+                                   Foreground="{DynamicResource TextSecondary}" Margin="0,2,0,0"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <RadioButton Style="{DynamicResource ThemeRadioButton}" GroupName="FitMode"
+                                     Content="以最长边定" IsChecked="{Binding IsFitFit, Mode=TwoWay}"/>
+                        <RadioButton Style="{DynamicResource ThemeRadioButton}" GroupName="FitMode"
+                                     Content="居中"       IsChecked="{Binding IsFitCenter, Mode=TwoWay}"/>
+                        <RadioButton Style="{DynamicResource ThemeRadioButton}" GroupName="FitMode"
+                                     Content="拉伸"       IsChecked="{Binding IsFitStretch, Mode=TwoWay}"
                                      Margin="0"/>
                     </StackPanel>
                 </Grid>

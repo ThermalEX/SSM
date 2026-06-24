@@ -1,6 +1,7 @@
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -34,6 +35,13 @@ public partial class OverlayWindow : Window
 
         if (angle != 0)
             RotatableContent.LayoutTransform = new RotateTransform(angle);
+
+        RotatableContent.Stretch = settingsService.Settings.FitMode switch
+        {
+            OverlayFitMode.Center  => Stretch.None,
+            OverlayFitMode.Stretch => Stretch.Fill,
+            _                      => Stretch.Uniform,
+        };
 
         var sp2Path = ResolveTemplatePath();
         _renderer = new OverlayCanvasRenderer(OverlayCanvas, _monitor);

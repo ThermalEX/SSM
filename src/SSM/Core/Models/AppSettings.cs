@@ -1,5 +1,7 @@
 namespace SSM.Core.Models;
 
+public enum OverlayFitMode { Fit, Center, Stretch }
+
 public class AppSettings
 {
     public int TargetScreenIndex { get; set; } = 1;
@@ -19,6 +21,8 @@ public class AppSettings
     public NetworkSpeedUnit NetworkSpeedUnit { get; set; } = NetworkSpeedUnit.Auto;
 
     public List<DashboardWidgetConfig> DashboardWidgets { get; set; } = new();
+
+    public OverlayFitMode FitMode { get; set; } = OverlayFitMode.Fit;
 
     // Relative path from BaseDirectory to the active .sp2 template
     public string ActiveSp2Template { get; set; } = @"Themes\Monitor\template\2026-06-23.sp2";
