@@ -99,6 +99,7 @@ public partial class ThemeEditorWindow : Window
 
     private OverlayCanvasRenderer? _renderer;
     private readonly MockMonitorService _mockService = new();
+    private double _zoom = 1.0;
 
     // ── Mock monitor service for in-editor preview ────────────────
     private sealed class MockMonitorService : IHardwareMonitorService
@@ -117,7 +118,11 @@ public partial class ThemeEditorWindow : Window
         InitializeComponent();
         _sp2Path = sp2Path;
         Title = $"sp2 编辑器 — {Path.GetFileName(sp2Path)}";
-        Loaded += (_, _) => LoadSp2();
+        Loaded += (_, _) =>
+        {
+            LoadSp2();
+            Dispatcher.InvokeAsync(ZoomFit, System.Windows.Threading.DispatcherPriority.Loaded);
+        };
     }
 
     // ── Load ─────────────────────────────────────────────────────
@@ -163,7 +168,60 @@ public partial class ThemeEditorWindow : Window
         _renderer.BuildFromPanel(_panel, Path.GetDirectoryName(_sp2Path) ?? "");
         _renderer.OnDataUpdated(BuildMockData());
 
+        // Sync container and selection canvas to actual panel dimensions
+        double pw = _panel.Width  > 0 ? _panel.Width  : 1024;
+        double ph = _panel.Height > 0 ? _panel.Height : 600;
+        CanvasContainer.Width  = pw;
+        CanvasContainer.Height = ph;
+        SelectionCanvas.Width  = pw;
+        SelectionCanvas.Height = ph;
+
         RebuildSelectionOverlays();
+    }
+
+    // ── Zoom ──────────────────────────────────────────────────────
+
+    private void ApplyZoom()
+    {
+        CanvasScale.ScaleX = _zoom;
+        CanvasScale.ScaleY = _zoom;
+        ZoomText.Text = $"{_zoom:P0}";
+    }
+
+    private void ZoomFit()
+    {
+        double availW = CanvasScroller.ActualWidth  - 20;
+        double availH = CanvasScroller.ActualHeight - 20;
+        double pw = _panel.Width  > 0 ? _panel.Width  : 1024;
+        double ph = _panel.Height > 0 ? _panel.Height : 600;
+        if (availW <= 0 || availH <= 0) { _zoom = 1.0; ApplyZoom(); return; }
+        _zoom = Math.Min(availW / pw, availH / ph);
+        _zoom = Math.Max(0.05, Math.Min(4.0, _zoom));
+        ApplyZoom();
+    }
+
+    private void ZoomIn_Click(object sender, RoutedEventArgs e)
+    {
+        _zoom = Math.Min(4.0, _zoom * 1.25);
+        ApplyZoom();
+    }
+
+    private void ZoomOut_Click(object sender, RoutedEventArgs e)
+    {
+        _zoom = Math.Max(0.05, _zoom / 1.25);
+        ApplyZoom();
+    }
+
+    private void ZoomFit_Click(object sender, RoutedEventArgs e) => ZoomFit();
+
+    private void CanvasScroller_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
+        {
+            _zoom = e.Delta > 0 ? Math.Min(4.0, _zoom * 1.1) : Math.Max(0.05, _zoom / 1.1);
+            ApplyZoom();
+            e.Handled = true;
+        }
     }
 
     private void RebuildSelectionOverlays()

@@ -179,8 +179,23 @@
 
             <!-- 中：Canvas 画布（实时渲染预览 + 透明选择层） -->
             <Grid Grid.Column="2" Background="{DynamicResource BgDeep}">
-                <Viewbox Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Grid Width="1024" Height="600">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="32"/>
+                </Grid.RowDefinitions>
+
+                <!-- 可滚动画布区 -->
+                <ScrollViewer Grid.Row="0" x:Name="CanvasScroller"
+                              HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Auto"
+                              PreviewMouseWheel="CanvasScroller_PreviewMouseWheel">
+                    <Grid x:Name="CanvasContainer"
+                          Width="1024" Height="600"
+                          HorizontalAlignment="Left" VerticalAlignment="Top"
+                          Margin="8">
+                        <Grid.LayoutTransform>
+                            <ScaleTransform x:Name="CanvasScale" ScaleX="1" ScaleY="1"/>
+                        </Grid.LayoutTransform>
                         <!-- 实际 sp2 渲染层 -->
                         <Canvas x:Name="RenderCanvas" Width="1024" Height="600" ClipToBounds="True"/>
                         <!-- 透明交互选择层（覆盖在渲染层之上） -->
@@ -192,7 +207,30 @@
                                 MouseMove="Canvas_MouseMove"
                                 MouseLeftButtonUp="Canvas_MouseLeftButtonUp"/>
                     </Grid>
-                </Viewbox>
+                </ScrollViewer>
+
+                <!-- 缩放工具栏 -->
+                <Border Grid.Row="1"
+                        Background="{DynamicResource TitleBarBg}"
+                        BorderBrush="{DynamicResource DividerBrush}"
+                        BorderThickness="0,1,0,0">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
+                                VerticalAlignment="Center">
+                        <Button Content="−" Width="24" Height="24" Padding="0"
+                                Style="{DynamicResource SecondaryButton}"
+                                Click="ZoomOut_Click"/>
+                        <TextBlock x:Name="ZoomText" Text="100%" MinWidth="52"
+                                   TextAlignment="Center" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextSecondary}" Margin="6,0"/>
+                        <Button Content="+" Width="24" Height="24" Padding="0"
+                                Style="{DynamicResource SecondaryButton}"
+                                Click="ZoomIn_Click"/>
+                        <Button Content="⊡" Width="24" Height="24" Padding="0"
+                                Style="{DynamicResource SecondaryButton}"
+                                ToolTip="适合窗口" Margin="10,0,0,0"
+                                Click="ZoomFit_Click"/>
+                    </StackPanel>
+                </Border>
             </Grid>
 
             <GridSplitter Grid.Column="3" Width="4" HorizontalAlignment="Stretch"

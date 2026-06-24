@@ -10,6 +10,6 @@
         ResizeMode="NoResize">
 
     <Viewbox x:Name="RotatableContent" Stretch="Uniform">
-        <Canvas x:Name="OverlayCanvas" Width="1024" Height="600" ClipToBounds="True"/>
+        <Canvas x:Name="OverlayCanvas" Width="1024" Height="600"/>
     </Viewbox>
 </Window>
