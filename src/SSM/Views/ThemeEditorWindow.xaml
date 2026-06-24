@@ -1,8 +1,8 @@
 <Window x:Class="SSM.Views.ThemeEditorWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="主题编辑器" Height="680" Width="1100"
-        MinHeight="500" MinWidth="800"
+        Title="sp2 编辑器" Height="700" Width="1200"
+        MinHeight="520" MinWidth="900"
         WindowStyle="SingleBorderWindow"
         Background="{DynamicResource BgDeep}"
         Closing="Window_Closing">
@@ -19,266 +19,375 @@
 
                 <Button x:Name="SaveButton" Content="保存"
                         Style="{DynamicResource PrimaryButton}"
-                        Padding="14,5" Click="SaveButton_Click"/>
+                        Margin="0,0,8,0" Padding="14,6"
+                        Click="SaveButton_Click"/>
 
-                <Separator Width="1" Background="{DynamicResource DividerBrush}"
-                           Margin="10,6,10,6"/>
+                <Separator Width="1" Height="20" Background="{DynamicResource DividerBrush}" Margin="4,0"/>
 
-                <!-- + 元素按钮 -->
-                <Button Content="＋ 文字" Style="{DynamicResource SecondaryButton}"
-                        Padding="10,5" Margin="0,0,6,0"
-                        Click="AddText_Click"/>
-                <Button Content="＋ 进度条" Style="{DynamicResource SecondaryButton}"
-                        Padding="10,5" Margin="0,0,6,0"
-                        Click="AddProgressBar_Click"/>
-                <Button Content="＋ 传感器" Style="{DynamicResource SecondaryButton}"
-                        Padding="10,5" Margin="0,0,6,0"
-                        Click="AddSensorText_Click"/>
-                <Button Content="＋ 图片" Style="{DynamicResource SecondaryButton}"
-                        Padding="10,5" Margin="0,0,6,0"
+                <Button Content="+文字"
+                        Style="{DynamicResource SecondaryButton}"
+                        Margin="4,0" Padding="10,6"
+                        Click="AddLabel_Click"/>
+                <Button Content="+传感器"
+                        Style="{DynamicResource SecondaryButton}"
+                        Margin="4,0" Padding="10,6"
+                        Click="AddSimple_Click"/>
+                <Button Content="+仪表盘"
+                        Style="{DynamicResource SecondaryButton}"
+                        Margin="4,0" Padding="10,6"
+                        Click="AddGauge_Click"/>
+                <Button Content="+折线图"
+                        Style="{DynamicResource SecondaryButton}"
+                        Margin="4,0" Padding="10,6"
+                        Click="AddGraph_Click"/>
+                <Button Content="+图片"
+                        Style="{DynamicResource SecondaryButton}"
+                        Margin="4,0" Padding="10,6"
                         Click="AddImage_Click"/>
 
-                <Separator Width="1" Background="{DynamicResource DividerBrush}"
-                           Margin="10,6,10,6"/>
+                <Separator Width="1" Height="20" Background="{DynamicResource DividerBrush}" Margin="4,0"/>
 
-                <!-- 背景色 -->
-                <TextBlock Text="背景：" Foreground="{DynamicResource TextSecondary}"
-                           FontSize="12" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                <TextBox x:Name="BgColorBox" Width="80" FontSize="11"
-                         FontFamily="Consolas"
-                         Background="{DynamicResource BgDeep}"
-                         Foreground="{DynamicResource TextPrimary}"
-                         BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
-                         Padding="6,4" VerticalAlignment="Center"
-                         LostFocus="BgColorBox_LostFocus"/>
+                <Button x:Name="MoveUpButton" Content="上移"
+                        Style="{DynamicResource SecondaryButton}"
+                        IsEnabled="False"
+                        Margin="4,0" Padding="10,6"
+                        Click="MoveUp_Click"/>
+                <Button x:Name="MoveDownButton" Content="下移"
+                        Style="{DynamicResource SecondaryButton}"
+                        IsEnabled="False"
+                        Margin="4,0" Padding="10,6"
+                        Click="MoveDown_Click"/>
+                <Button x:Name="DeleteSelectedButton" Content="删除"
+                        Style="{DynamicResource SecondaryButton}"
+                        IsEnabled="False"
+                        Margin="4,0" Padding="10,6" Foreground="#E57373"
+                        Click="DeleteSelected_Click"/>
 
-                <!-- 删除选中（右对齐） -->
-                <Button x:Name="DeleteSelectedButton" Content="删除选中"
-                        Foreground="{DynamicResource DangerBrush}"
-                        Background="Transparent" BorderThickness="0"
-                        FontSize="12" Padding="10,5"
-                        HorizontalAlignment="Right"
-                        Click="DeleteSelected_Click"
-                        IsEnabled="False">
-                    <Button.Style>
-                        <Style TargetType="Button">
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}"
-                                                Padding="{TemplateBinding Padding}"
-                                                CornerRadius="4">
-                                            <ContentPresenter HorizontalAlignment="Center"
-                                                              VerticalAlignment="Center"/>
-                                        </Border>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </Button.Style>
-                </Button>
             </StackPanel>
         </Border>
 
-        <!-- ── 左侧元素列表 ── -->
-        <Border DockPanel.Dock="Left" Width="160"
-                Background="{DynamicResource SidebarBg}"
+        <!-- ── 底部：Mock 传感器数值 ── -->
+        <Border DockPanel.Dock="Bottom"
+                Background="{DynamicResource TitleBarBg}"
                 BorderBrush="{DynamicResource DividerBrush}"
-                BorderThickness="0,0,1,0">
-            <DockPanel>
-                <TextBlock DockPanel.Dock="Top"
-                           Text="元素列表" FontSize="11" FontWeight="SemiBold"
-                           Foreground="{DynamicResource TextSecondary}"
-                           Margin="10,10,10,4"/>
-                <ListBox x:Name="ElementList"
-                         Background="Transparent"
-                         BorderThickness="0"
-                         SelectionChanged="ElementList_SelectionChanged">
-                    <ListBox.ItemContainerStyle>
-                        <Style TargetType="ListBoxItem">
-                            <Setter Property="Padding" Value="8,6"/>
-                            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-                            <Setter Property="FontSize" Value="12"/>
-                            <Setter Property="Background" Value="Transparent"/>
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="ListBoxItem">
-                                        <Border Background="{TemplateBinding Background}"
-                                                Padding="{TemplateBinding Padding}"
-                                                CornerRadius="4" Margin="4,1">
-                                            <ContentPresenter/>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsSelected" Value="True">
-                                                <Setter Property="Background" Value="{DynamicResource Accent}"/>
-                                                <Setter Property="Foreground" Value="White"/>
-                                            </Trigger>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Background" Value="{DynamicResource BgCard}"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </ListBox.ItemContainerStyle>
-                </ListBox>
-            </DockPanel>
-        </Border>
-
-        <!-- ── 右侧属性面板 ── -->
-        <Border DockPanel.Dock="Right" Width="210"
-                Background="{DynamicResource SidebarBg}"
-                BorderBrush="{DynamicResource DividerBrush}"
-                BorderThickness="1,0,0,0">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <StackPanel x:Name="PropertyPanel" Margin="10,10,10,10">
-
-                    <TextBlock x:Name="NothingSelected"
-                               Text="点击 Canvas 上的元素&#10;查看属性"
+                BorderThickness="0,1,0,0"
+                Padding="10,6" Height="44">
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="预览数值" FontSize="11" FontWeight="SemiBold"
                                Foreground="{DynamicResource TextSecondary}"
-                               FontSize="12" TextAlignment="Center"
-                               HorizontalAlignment="Center" Margin="0,20,0,0"/>
+                               VerticalAlignment="Center" Margin="0,0,10,0"/>
 
-                    <!-- 属性组：位置与大小 -->
-                    <StackPanel x:Name="PanelPosition" Visibility="Collapsed">
-                        <TextBlock Text="位置与大小" FontSize="11" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,6"/>
-                        <Grid Margin="0,0,0,4">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="30"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="30"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="X" FontSize="11"
-                                       Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center"/>
-                            <TextBox x:Name="PropX" Grid.Column="1"
-                                     Style="{DynamicResource PropTextBox}" LostFocus="PropX_LostFocus"/>
-                            <TextBlock Grid.Column="2" Text="Y" FontSize="11"
-                                       Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" Margin="6,0,0,0"/>
-                            <TextBox x:Name="PropY" Grid.Column="3"
-                                     Style="{DynamicResource PropTextBox}" LostFocus="PropY_LostFocus"/>
-                        </Grid>
-                        <Grid Margin="0,0,0,12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="30"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="30"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="W" FontSize="11"
-                                       Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center"/>
-                            <TextBox x:Name="PropW" Grid.Column="1"
-                                     Style="{DynamicResource PropTextBox}" LostFocus="PropW_LostFocus"/>
-                            <TextBlock Grid.Column="2" Text="H" FontSize="11"
-                                       Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" Margin="6,0,0,0"/>
-                            <TextBox x:Name="PropH" Grid.Column="3"
-                                     Style="{DynamicResource PropTextBox}" LostFocus="PropH_LostFocus"/>
-                        </Grid>
+                    <TextBlock Text="CPU温度" FontSize="10" Foreground="{DynamicResource TextSecondary}"
+                               VerticalAlignment="Center" Margin="4,0,3,0"/>
+                    <TextBox x:Name="MockCpuTemp" Width="44" Text="55"
+                             VerticalContentAlignment="Center" TextChanged="MockValue_Changed"/>
 
-                        <!-- 透明度 -->
-                        <TextBlock Text="透明度" FontSize="11" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4"/>
-                        <Grid Margin="0,0,0,12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="32"/>
-                            </Grid.ColumnDefinitions>
-                            <Slider x:Name="PropOpacity" Grid.Column="0"
-                                    Minimum="0" Maximum="1" SmallChange="0.05"
-                                    VerticalAlignment="Center"
-                                    ValueChanged="PropOpacity_ValueChanged"/>
-                            <TextBlock x:Name="PropOpacityLabel" Grid.Column="1"
-                                       Text="1.0" FontSize="11"
-                                       Foreground="{DynamicResource TextSecondary}"
-                                       VerticalAlignment="Center" Margin="4,0,0,0"/>
-                        </Grid>
+                    <TextBlock Text="负载%" FontSize="10" Foreground="{DynamicResource TextSecondary}"
+                               VerticalAlignment="Center" Margin="8,0,3,0"/>
+                    <TextBox x:Name="MockCpuLoad" Width="40" Text="35"
+                             VerticalContentAlignment="Center" TextChanged="MockValue_Changed"/>
 
-                        <!-- 字体颜色（Text / SensorText） -->
-                        <StackPanel x:Name="PanelFont" Visibility="Collapsed">
-                            <TextBlock Text="文字外观" FontSize="11" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4"/>
-                            <Grid Margin="0,0,0,4">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="40"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="字号" FontSize="11"
-                                           Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center"/>
-                                <TextBox x:Name="PropFontSize" Grid.Column="1"
-                                         Style="{DynamicResource PropTextBox}" LostFocus="PropFontSize_LostFocus"/>
-                            </Grid>
-                            <Grid Margin="0,0,0,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="40"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="颜色" FontSize="11"
-                                           Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center"/>
-                                <TextBox x:Name="PropFontColor" Grid.Column="1"
-                                         FontFamily="Consolas" FontSize="11"
-                                         Style="{DynamicResource PropTextBox}" LostFocus="PropFontColor_LostFocus"/>
-                            </Grid>
-                        </StackPanel>
+                    <TextBlock Text="MHz" FontSize="10" Foreground="{DynamicResource TextSecondary}"
+                               VerticalAlignment="Center" Margin="8,0,3,0"/>
+                    <TextBox x:Name="MockCpuClock" Width="52" Text="4500"
+                             VerticalContentAlignment="Center" TextChanged="MockValue_Changed"/>
 
-                        <!-- 静态文字内容（Type=Text） -->
-                        <StackPanel x:Name="PanelText" Visibility="Collapsed">
-                            <TextBlock Text="文字内容" FontSize="11" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4"/>
-                            <TextBox x:Name="PropText"
-                                     Style="{DynamicResource PropTextBox}"
-                                     TextWrapping="Wrap" MinHeight="48"
-                                     AcceptsReturn="True"
-                                     LostFocus="PropText_LostFocus"
-                                     Margin="0,0,0,12"/>
-                        </StackPanel>
+                    <Separator Width="1" Height="20" Background="{DynamicResource DividerBrush}" Margin="10,0"/>
 
-                        <!-- 数据绑定（SensorText / ProgressBar） -->
-                        <StackPanel x:Name="PanelBinding" Visibility="Collapsed">
-                            <TextBlock Text="数据绑定" FontSize="11" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4"/>
-                            <TextBlock Text="CPU.Temperature / CPU.Load&#10;GPU.Temperature / GPU.Load&#10;Memory.UsagePercent&#10;Network.UploadSpeed"
-                                       FontSize="10" Foreground="{DynamicResource TextSecondary}"
-                                       Margin="0,0,0,4"/>
-                            <TextBox x:Name="PropBinding"
-                                     Style="{DynamicResource PropTextBox}"
-                                     LostFocus="PropBinding_LostFocus"
-                                     Margin="0,0,0,12"/>
-                        </StackPanel>
-                    </StackPanel>
+                    <TextBlock Text="GPU温度" FontSize="10" Foreground="{DynamicResource TextSecondary}"
+                               VerticalAlignment="Center" Margin="0,0,3,0"/>
+                    <TextBox x:Name="MockGpuTemp" Width="44" Text="65"
+                             VerticalContentAlignment="Center" TextChanged="MockValue_Changed"/>
 
+                    <TextBlock Text="负载%" FontSize="10" Foreground="{DynamicResource TextSecondary}"
+                               VerticalAlignment="Center" Margin="8,0,3,0"/>
+                    <TextBox x:Name="MockGpuLoad" Width="40" Text="40"
+                             VerticalContentAlignment="Center" TextChanged="MockValue_Changed"/>
+
+                    <TextBlock Text="MHz" FontSize="10" Foreground="{DynamicResource TextSecondary}"
+                               VerticalAlignment="Center" Margin="8,0,3,0"/>
+                    <TextBox x:Name="MockGpuClock" Width="52" Text="1800"
+                             VerticalContentAlignment="Center" TextChanged="MockValue_Changed"/>
+
+                    <Separator Width="1" Height="20" Background="{DynamicResource DividerBrush}" Margin="10,0"/>
+
+                    <TextBlock Text="内存MB" FontSize="10" Foreground="{DynamicResource TextSecondary}"
+                               VerticalAlignment="Center" Margin="0,0,3,0"/>
+                    <TextBox x:Name="MockMemUsed" Width="56" Text="16384"
+                             VerticalContentAlignment="Center" TextChanged="MockValue_Changed"/>
+
+                    <TextBlock Text="↓B/s" FontSize="10" Foreground="{DynamicResource TextSecondary}"
+                               VerticalAlignment="Center" Margin="8,0,3,0"/>
+                    <TextBox x:Name="MockNetDL" Width="72" Text="1048576"
+                             VerticalContentAlignment="Center" TextChanged="MockValue_Changed"/>
+
+                    <TextBlock Text="↑B/s" FontSize="10" Foreground="{DynamicResource TextSecondary}"
+                               VerticalAlignment="Center" Margin="8,0,3,0"/>
+                    <TextBox x:Name="MockNetUL" Width="72" Text="524288"
+                             VerticalContentAlignment="Center" TextChanged="MockValue_Changed"/>
+
+                    <Separator Width="1" Height="20" Background="{DynamicResource DividerBrush}" Margin="10,0"/>
+
+                    <TextBlock Text="硬盘温度" FontSize="10" Foreground="{DynamicResource TextSecondary}"
+                               VerticalAlignment="Center" Margin="0,0,3,0"/>
+                    <TextBox x:Name="MockStoTemp" Width="44" Text="35"
+                             VerticalContentAlignment="Center" TextChanged="MockValue_Changed"/>
+
+                    <Separator Width="1" Height="20" Background="{DynamicResource DividerBrush}" Margin="10,0"/>
+
+                    <TextBlock Text="音量%" FontSize="10" Foreground="{DynamicResource TextSecondary}"
+                               VerticalAlignment="Center" Margin="0,0,3,0"/>
+                    <TextBox x:Name="MockVolume" Width="40" Text="50"
+                             VerticalContentAlignment="Center" TextChanged="MockValue_Changed"/>
                 </StackPanel>
             </ScrollViewer>
         </Border>
 
-        <!-- ── 中央 Canvas 预览区 ── -->
-        <ScrollViewer Background="{DynamicResource BgDeep}"
-                      HorizontalScrollBarVisibility="Auto"
-                      VerticalScrollBarVisibility="Auto">
-            <Grid HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20">
-                <!-- 960×540 = 1920×1080 的 50% -->
-                <Viewbox Width="960" Height="540" Stretch="Uniform">
-                    <Canvas x:Name="CanvasArea" Width="1920" Height="1080"
-                            ClipToBounds="True"
-                            MouseLeftButtonDown="Canvas_MouseLeftButtonDown"/>
+        <!-- ── 三列主体 ── -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="230" MinWidth="160"/>
+                <ColumnDefinition Width="4"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="4"/>
+                <ColumnDefinition Width="240" MinWidth="200"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- 左：元素列表 -->
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="36"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Border Grid.Row="0" BorderBrush="{DynamicResource DividerBrush}"
+                        BorderThickness="0,0,1,1" Padding="10,0">
+                    <TextBlock Text="元素 / Elements" FontSize="11" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextSecondary}"
+                               VerticalAlignment="Center"/>
+                </Border>
+                <ListBox x:Name="ElementList" Grid.Row="1"
+                         Background="{DynamicResource BgCard}"
+                         BorderBrush="{DynamicResource DividerBrush}"
+                         BorderThickness="0,0,1,0"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         SelectionChanged="ElementList_SelectionChanged"/>
+            </Grid>
+
+            <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Stretch"
+                          Background="{DynamicResource DividerBrush}"/>
+
+            <!-- 中：Canvas 画布（实时渲染预览 + 透明选择层） -->
+            <Grid Grid.Column="2" Background="{DynamicResource BgDeep}">
+                <Viewbox Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Grid Width="1024" Height="600">
+                        <!-- 实际 sp2 渲染层 -->
+                        <Canvas x:Name="RenderCanvas" Width="1024" Height="600" ClipToBounds="True"/>
+                        <!-- 透明交互选择层（覆盖在渲染层之上） -->
+                        <Canvas x:Name="SelectionCanvas" Width="1024" Height="600"
+                                Background="Transparent"
+                                Focusable="True"
+                                KeyDown="SelectionCanvas_KeyDown"
+                                MouseLeftButtonDown="Canvas_MouseLeftButtonDown"
+                                MouseMove="Canvas_MouseMove"
+                                MouseLeftButtonUp="Canvas_MouseLeftButtonUp"/>
+                    </Grid>
                 </Viewbox>
             </Grid>
-        </ScrollViewer>
 
+            <GridSplitter Grid.Column="3" Width="4" HorizontalAlignment="Stretch"
+                          Background="{DynamicResource DividerBrush}"/>
+
+            <!-- 右：属性面板 -->
+            <ScrollViewer Grid.Column="4"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Background="{DynamicResource BgCard}">
+                <StackPanel Margin="12,10">
+
+                    <!-- 空提示 -->
+                    <TextBlock x:Name="NothingSelected"
+                               Text="选中元素以编辑属性"
+                               FontSize="11" Foreground="{DynamicResource TextSecondary}"
+                               TextAlignment="Center" Margin="0,20"/>
+
+                    <!-- 属性区 -->
+                    <StackPanel x:Name="PropPanel" Visibility="Collapsed">
+
+                        <!-- 元素类型 -->
+                        <TextBlock x:Name="PropKindLabel"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource Accent}"
+                                   Margin="0,0,0,10"/>
+
+                        <TextBlock Text="位置 / 大小" FontSize="10" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4"/>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/><ColumnDefinition Width="6"/>
+                                <ColumnDefinition/><ColumnDefinition Width="6"/>
+                                <ColumnDefinition/><ColumnDefinition Width="6"/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="X" FontSize="10" Foreground="{DynamicResource TextSecondary}"/>
+                                <TextBox x:Name="PropX" LostFocus="Prop_LostFocus" Tag="X"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Y" FontSize="10" Foreground="{DynamicResource TextSecondary}"/>
+                                <TextBox x:Name="PropY" LostFocus="Prop_LostFocus" Tag="Y"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="4">
+                                <TextBlock Text="宽" FontSize="10" Foreground="{DynamicResource TextSecondary}"/>
+                                <TextBox x:Name="PropW" LostFocus="Prop_LostFocus" Tag="W"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="6">
+                                <TextBlock Text="高" FontSize="10" Foreground="{DynamicResource TextSecondary}"/>
+                                <TextBox x:Name="PropH" LostFocus="Prop_LostFocus" Tag="H"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- SensorId（SIMPLE/GAUGE/GRAPH/BAR） -->
+                        <StackPanel x:Name="PanelSensorId" Visibility="Collapsed" Margin="0,0,0,8">
+                            <TextBlock Text="SensorId" FontSize="10" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4"/>
+                            <ComboBox x:Name="PropSensorId"
+                                      IsEditable="True"
+                                      Tag="SensorId"
+                                      LostFocus="Prop_LostFocus"
+                                      SelectionChanged="PropSensorId_SelectionChanged">
+                                <!-- CPU -->
+                                <ComboBoxItem Content="TCPU" ToolTip="CPU 封装温度"/>
+                                <ComboBoxItem Content="SCPUUTI" ToolTip="CPU 总负载 %"/>
+                                <ComboBoxItem Content="SCPUCLK" ToolTip="CPU 频率 MHz"/>
+                                <ComboBoxItem Content="FCPU1" ToolTip="CPU 风扇转速 RPM"/>
+                                <!-- GPU -->
+                                <ComboBoxItem Content="TGPU1" ToolTip="GPU 温度"/>
+                                <ComboBoxItem Content="SGPU1UTI" ToolTip="GPU 核心负载 %"/>
+                                <ComboBoxItem Content="SGPU1CLK" ToolTip="GPU 核心频率 MHz"/>
+                                <ComboBoxItem Content="FGPU1" ToolTip="GPU 风扇转速 RPM"/>
+                                <ComboBoxItem Content="SGPU1MEMUTI" ToolTip="GPU 显存负载 %"/>
+                                <!-- Memory -->
+                                <ComboBoxItem Content="SRAMUTI" ToolTip="内存使用率 %"/>
+                                <ComboBoxItem Content="SUSEDMEM" ToolTip="已用内存 MB"/>
+                                <ComboBoxItem Content="SFREEMEM" ToolTip="可用内存 MB"/>
+                                <ComboBoxItem Content="STOTALMEM" ToolTip="总内存 MB"/>
+                                <!-- Network -->
+                                <ComboBoxItem Content="SNIC1DLRATE" ToolTip="网口1 下载速率 B/s"/>
+                                <ComboBoxItem Content="SNIC1ULRATE" ToolTip="网口1 上传速率 B/s"/>
+                                <ComboBoxItem Content="SNIC2DLRATE" ToolTip="网口2 下载速率 B/s"/>
+                                <ComboBoxItem Content="SNIC2ULRATE" ToolTip="网口2 上传速率 B/s"/>
+                                <!-- Storage -->
+                                <ComboBoxItem Content="THDD1" ToolTip="硬盘1 温度"/>
+                                <!-- Motherboard -->
+                                <ComboBoxItem Content="TMOTHERBOARD" ToolTip="主板温度"/>
+                                <ComboBoxItem Content="FCHA1" ToolTip="机箱风扇1 RPM"/>
+                                <ComboBoxItem Content="FCHA2" ToolTip="机箱风扇2 RPM"/>
+                                <!-- Audio -->
+                                <ComboBoxItem Content="SVOL" ToolTip="系统主音量 %"/>
+                                <!-- Time -->
+                                <ComboBoxItem Content="DATE" ToolTip="当前日期"/>
+                                <ComboBoxItem Content="TIME" ToolTip="当前时间"/>
+                            </ComboBox>
+                        </StackPanel>
+
+                        <!-- 标签文字 -->
+                        <StackPanel x:Name="PanelLabel" Visibility="Collapsed" Margin="0,0,0,8">
+                            <TextBlock Text="标签文字" FontSize="10" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4"/>
+                            <TextBox x:Name="PropLabel" LostFocus="Prop_LostFocus" Tag="Label"/>
+                        </StackPanel>
+
+                        <!-- 单位 -->
+                        <StackPanel x:Name="PanelUnit" Visibility="Collapsed" Margin="0,0,0,8">
+                            <TextBlock Text="单位" FontSize="10" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4"/>
+                            <TextBox x:Name="PropUnit" LostFocus="Prop_LostFocus" Tag="Unit"/>
+                        </StackPanel>
+
+                        <!-- 显示选项 -->
+                        <StackPanel x:Name="PanelShow" Visibility="Collapsed" Margin="0,0,0,8">
+                            <TextBlock Text="显示选项" FontSize="10" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4"/>
+                            <CheckBox x:Name="PropShowLabel" Content="显示标签" Margin="0,2"
+                                      Foreground="{DynamicResource TextPrimary}"
+                                      Click="PropCheck_Click" Tag="ShowLabel"/>
+                            <CheckBox x:Name="PropShowValue" Content="显示数值" Margin="0,2"
+                                      Foreground="{DynamicResource TextPrimary}"
+                                      Click="PropCheck_Click" Tag="ShowValue"/>
+                            <CheckBox x:Name="PropShowUnit"  Content="显示单位" Margin="0,2"
+                                      Foreground="{DynamicResource TextPrimary}"
+                                      Click="PropCheck_Click" Tag="ShowUnit"/>
+                        </StackPanel>
+
+                        <!-- 字体 -->
+                        <StackPanel x:Name="PanelFont" Visibility="Collapsed" Margin="0,0,0,8">
+                            <TextBlock Text="字体" FontSize="10" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4"/>
+                            <TextBox x:Name="PropFontName" LostFocus="Prop_LostFocus" Tag="FontName" Margin="0,0,0,4"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/><ColumnDefinition Width="8"/><ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="大小" FontSize="10" Foreground="{DynamicResource TextSecondary}"/>
+                                    <TextBox x:Name="PropFontSize" LostFocus="Prop_LostFocus" Tag="FontSize"/>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- 颜色（文字/数值/标签） -->
+                        <StackPanel x:Name="PanelColor" Visibility="Collapsed" Margin="0,0,0,8">
+                            <TextBlock Text="颜色（RRGGBB 十六进制）" FontSize="10" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4"/>
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="8"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="文字色" FontSize="10" Foreground="{DynamicResource TextSecondary}"/>
+                                    <TextBox x:Name="PropTextColor" LostFocus="Prop_LostFocus" Tag="TextColor" FontFamily="Consolas"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="数值色" FontSize="10" Foreground="{DynamicResource TextSecondary}"/>
+                                    <TextBox x:Name="PropValueColor" LostFocus="Prop_LostFocus" Tag="ValueColor" FontFamily="Consolas"/>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- 数值范围（仪表/图表） -->
+                        <StackPanel x:Name="PanelRange" Visibility="Collapsed" Margin="0,0,0,8">
+                            <TextBlock Text="数值范围" FontSize="10" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="8"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="最小" FontSize="10" Foreground="{DynamicResource TextSecondary}"/>
+                                    <TextBox x:Name="PropMinVal" LostFocus="Prop_LostFocus" Tag="MinVal"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="最大" FontSize="10" Foreground="{DynamicResource TextSecondary}"/>
+                                    <TextBox x:Name="PropMaxVal" LostFocus="Prop_LostFocus" Tag="MaxVal"/>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- 图片路径 -->
+                        <StackPanel x:Name="PanelImage" Visibility="Collapsed" Margin="0,0,0,8">
+                            <TextBlock Text="图片文件" FontSize="10" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="4"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <TextBox x:Name="PropImageFile" Grid.Column="0"
+                                         LostFocus="Prop_LostFocus" Tag="ImageFile"/>
+                                <Button Grid.Column="2" Content="…" Padding="8,2"
+                                        Style="{DynamicResource SecondaryButton}"
+                                        Click="BrowseImage_Click"/>
+                            </Grid>
+                        </StackPanel>
+
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+
+        </Grid>
     </DockPanel>
-
-    <Window.Resources>
-        <!-- 属性面板输入框公共样式 -->
-        <Style x:Key="PropTextBox" TargetType="TextBox">
-            <Setter Property="Background" Value="{DynamicResource BgDeep}"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="6,4"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-        </Style>
-    </Window.Resources>
-
 </Window>

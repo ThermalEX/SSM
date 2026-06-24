@@ -172,7 +172,11 @@
                         </Grid>
 
                         <!-- 动态卡片区 -->
-                        <UniformGrid x:Name="DashboardGrid" Columns="4"/>
+                        <Grid x:Name="DashboardContainer">
+                            <UniformGrid x:Name="DashboardGrid" Columns="4"/>
+                            <!-- 拖拽插入位置指示竖线，不参与布局命中测试 -->
+                            <Canvas x:Name="DropIndicatorCanvas" IsHitTestVisible="False"/>
+                        </Grid>
 
                         <!-- 已隐藏卡片芯片区（仅编辑模式可见） -->
                         <WrapPanel x:Name="HiddenWidgetsPanel" Visibility="Collapsed"

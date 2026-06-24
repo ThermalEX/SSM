@@ -6,6 +6,9 @@ public class HardwareData
     public GpuData Gpu { get; set; } = new();
     public MemoryData Memory { get; set; } = new();
     public NetworkData Network { get; set; } = new();
+    public MotherboardData Motherboard { get; set; } = new();
+    public StorageData Storage { get; set; } = new();
+    public AudioData    Audio   { get; set; } = new();
     public DateTime Timestamp { get; set; } = DateTime.Now;
 }
 
@@ -22,10 +25,27 @@ public class GpuData
 {
     public float Temperature { get; set; }
     public float Load { get; set; }
-    public float MemoryUsed { get; set; }
-    public float MemoryTotal { get; set; }
+    public float MemoryUsed { get; set; }   // MB
+    public float MemoryTotal { get; set; }  // MB
     public float FanSpeed { get; set; }
-    public float Clock { get; set; }  // MHz
+    public float Clock { get; set; }        // MHz
+    public float MemoryClock { get; set; }  // MHz
+}
+
+public class MotherboardData
+{
+    public float Temperature { get; set; }
+    public List<float> Fans { get; } = [];
+}
+
+public class StorageData
+{
+    public float Temperature { get; set; }
+}
+
+public class AudioData
+{
+    public float Volume { get; set; }  // 0-100 %
 }
 
 public class MemoryData

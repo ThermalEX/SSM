@@ -1,13 +1,7 @@
 using System.IO;
-using System.IO.Compression;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using Microsoft.Win32;
 using Button = System.Windows.Controls.Button;
-using MessageBox = System.Windows.MessageBox;
-using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 using UserControl = System.Windows.Controls.UserControl;
 using SSM.Core.Interfaces;
 
@@ -16,213 +10,154 @@ namespace SSM.Views.Pages;
 public partial class ThemePage : UserControl
 {
     private ISettingsService? _settingsService;
+    private IHardwareMonitorService? _monitor;
 
-    // Raised when user applies a theme; host (MainWindow) listens and reloads overlay
     public event Action<string>? ThemeApplied;
 
-    // Absolute path to Themes/monitor/ next to exe
     private static string MonitorThemesDir =>
         Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Themes", "monitor");
+
+    // Ordered list of (name, sp2Path) for all discovered themes
+    private readonly List<(string Name, string Sp2Path)> _themes = new();
+    private int _previewIdx = -1;   // index into _themes currently shown in preview
+    private string _activeSp2 = "";  // full path of currently applied theme
 
     public ThemePage()
     {
         InitializeComponent();
     }
 
-    public void Initialize(ISettingsService settingsService)
+    public void Initialize(ISettingsService settingsService, IHardwareMonitorService monitor)
     {
         _settingsService = settingsService;
-        Loaded += (_, _) => RefreshCards();
+        _monitor = monitor;
+        Loaded += (_, _) => Refresh();
     }
 
-    // Called by MainWindow after a template change to keep cards in sync
-    public void Refresh() => RefreshCards();
-
-    // ── Card building ─────────────────────────────────────────
-
-    private void RefreshCards()
+    public void Refresh()
     {
-        CardPanel.Children.Clear();
+        _activeSp2 = ResolveActiveSp2();
+        ScanThemes();
+        RebuildCombo();
 
-        if (!Directory.Exists(MonitorThemesDir)) return;
-
-        // Each subdirectory under Themes/monitor/ is a theme
-        var dirs = Directory.GetDirectories(MonitorThemesDir)
-            .OrderBy(d => d)
-            .ToList();
-
-        string activeFull = "";
-        if (_settingsService is not null)
-        {
-            var rel = _settingsService.Settings.ActiveSp2Template;
-            activeFull = Path.GetFullPath(
-                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, rel));
-        }
-
-        foreach (var dir in dirs)
-        {
-            var sp2 = Directory.GetFiles(dir, "*.sp2").FirstOrDefault();
-            if (sp2 is null) continue;
-
-            bool isActive = string.Equals(
-                Path.GetFullPath(sp2), activeFull,
-                StringComparison.OrdinalIgnoreCase);
-
-            CardPanel.Children.Add(BuildCard(dir, sp2, isActive));
-        }
+        // Jump to active theme in preview, or first available
+        int activeIdx = _themes.FindIndex(t =>
+            string.Equals(t.Sp2Path, _activeSp2, StringComparison.OrdinalIgnoreCase));
+        ShowPreview(activeIdx >= 0 ? activeIdx : (_themes.Count > 0 ? 0 : -1));
     }
 
-    private Border BuildCard(string dir, string sp2Path, bool isActive)
+    public void Cleanup() => Preview.Cleanup();
+
+    // ── Navigation ────────────────────────────────────
+
+    private void Prev_Click(object sender, RoutedEventArgs e)
     {
-        var name = Path.GetFileName(dir);
-
-        // Outer card border
-        var card = new Border
-        {
-            Width         = 220,
-            Margin        = new Thickness(8),
-            CornerRadius  = new CornerRadius(10),
-            BorderThickness = new Thickness(isActive ? 2 : 1),
-        };
-        card.SetResourceReference(Border.BackgroundProperty, "BgCard");
-        if (isActive)
-            card.SetResourceReference(Border.BorderBrushProperty, "Accent");
-        else
-            card.SetResourceReference(Border.BorderBrushProperty, "DividerBrush");
-
-        // Thumbnail (background_400.png or any first png)
-        var thumb = new Border
-        {
-            Height       = 110,
-            CornerRadius = new CornerRadius(8, 8, 0, 0),
-            ClipToBounds = true,
-        };
-        var thumbImg = FindThumbnail(dir);
-        if (thumbImg is not null)
-            thumb.Background = new ImageBrush(thumbImg) { Stretch = Stretch.UniformToFill };
-        else
-            thumb.SetResourceReference(Border.BackgroundProperty, "BgDeep");
-
-        // Info area
-        var nameTb = new TextBlock
-        {
-            Text       = name,
-            FontSize   = 13,
-            FontWeight = FontWeights.SemiBold,
-            Margin     = new Thickness(0, 0, 0, 4),
-            TextTrimming = TextTrimming.CharacterEllipsis,
-        };
-        nameTb.SetResourceReference(TextBlock.ForegroundProperty, "TextPrimary");
-
-        var applyBtn = new Button
-        {
-            Content = isActive ? "✓ 当前使用" : "应用",
-            IsEnabled = !isActive,
-            Padding = new Thickness(0, 5, 0, 5),
-            Margin  = new Thickness(0, 8, 0, 0),
-        };
-        applyBtn.SetResourceReference(Button.StyleProperty,
-            isActive ? "SecondaryButton" : "PrimaryButton");
-
-        if (!isActive)
-        {
-            var capturedSp2 = sp2Path;
-            applyBtn.Click += (_, _) => ApplyTheme(capturedSp2);
-        }
-
-        var info = new StackPanel { Margin = new Thickness(10) };
-        info.Children.Add(nameTb);
-        info.Children.Add(applyBtn);
-
-        var layout = new StackPanel();
-        layout.Children.Add(thumb);
-        layout.Children.Add(info);
-
-        card.Child = layout;
-        return card;
+        if (_themes.Count == 0) return;
+        int idx = (_previewIdx - 1 + _themes.Count) % _themes.Count;
+        ShowPreview(idx);
+        SyncCombo();
     }
 
-    private static BitmapImage? FindThumbnail(string dir)
+    private void Next_Click(object sender, RoutedEventArgs e)
     {
-        // prefer background_*.png, then first png
-        var candidates = new[]
-        {
-            Directory.GetFiles(dir, "background*.png").FirstOrDefault(),
-            Directory.GetFiles(dir, "*.png").FirstOrDefault()
-        };
-
-        var path = candidates.FirstOrDefault(p => p is not null);
-        if (path is null) return null;
-
-        try
-        {
-            var bmp = new BitmapImage();
-            bmp.BeginInit();
-            bmp.UriSource        = new Uri(path, UriKind.Absolute);
-            bmp.CacheOption      = BitmapCacheOption.OnLoad;
-            bmp.DecodePixelWidth = 440; // 2× card width for crisp display
-            bmp.EndInit();
-            bmp.Freeze();
-            return bmp;
-        }
-        catch { return null; }
+        if (_themes.Count == 0) return;
+        int idx = (_previewIdx + 1) % _themes.Count;
+        ShowPreview(idx);
+        SyncCombo();
     }
 
-    // ── Apply theme ───────────────────────────────────────────
-
-    private void ApplyTheme(string sp2FullPath)
+    private void ThemeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_settingsService is null) return;
+        int idx = ThemeCombo.SelectedIndex;
+        if (idx < 0 || idx == _previewIdx) return;
+        ShowPreview(idx);
+    }
 
-        // Store as relative path
-        var rel = Path.GetRelativePath(AppDomain.CurrentDomain.BaseDirectory, sp2FullPath);
-        _settingsService.Settings.ActiveSp2Template = rel;
+    private void Apply_Click(object sender, RoutedEventArgs e)
+    {
+        if (_previewIdx < 0 || _previewIdx >= _themes.Count) return;
+        var sp2 = _themes[_previewIdx].Sp2Path;
+
+        var rel = Path.GetRelativePath(AppDomain.CurrentDomain.BaseDirectory, sp2);
+        _settingsService!.Settings.ActiveSp2Template = rel;
         _settingsService.Save();
 
-        ThemeApplied?.Invoke(sp2FullPath);
-        RefreshCards();
+        _activeSp2 = sp2;
+        UpdateApplyButton();
+        ThemeApplied?.Invoke(sp2);
     }
 
-    // ── .spzip import ─────────────────────────────────────────
+    // ── Helpers ───────────────────────────────────────
 
-    private void Import_Click(object sender, RoutedEventArgs e)
+    private void ShowPreview(int idx)
     {
-        var dlg = new OpenFileDialog
+        _previewIdx = idx;
+        if (idx < 0 || idx >= _themes.Count)
         {
-            Title  = "导入 SensorPanel 主题",
-            Filter = "SensorPanel 主题包 (*.spzip)|*.spzip|所有文件 (*.*)|*.*",
-        };
-
-        if (dlg.ShowDialog() != true) return;
-
-        var zipPath  = dlg.FileName;
-        var themeName = Path.GetFileNameWithoutExtension(zipPath);
-        var destDir   = Path.Combine(MonitorThemesDir, themeName);
-
-        try
-        {
-            if (Directory.Exists(destDir))
-            {
-                var r = MessageBox.Show(
-                    $"主题「{themeName}」已存在，是否覆盖？",
-                    "导入主题", MessageBoxButton.OKCancel, MessageBoxImage.Question);
-                if (r != MessageBoxResult.OK) return;
-                Directory.Delete(destDir, true);
-            }
-
-            ZipFile.ExtractToDirectory(zipPath, destDir);
-
-            // Auto-apply if this is the only / first theme
-            var sp2 = Directory.GetFiles(destDir, "*.sp2").FirstOrDefault();
-            if (sp2 is not null)
-                ApplyTheme(sp2);
-            else
-                RefreshCards();
+            PrevBtn.IsEnabled = false;
+            NextBtn.IsEnabled = false;
+            ApplyBtn.IsEnabled = false;
+            return;
         }
-        catch (Exception ex)
+
+        var (name, sp2) = _themes[idx];
+
+        if (_monitor is not null)
+            Preview.Initialize(_monitor, sp2);
+
+        PrevBtn.IsEnabled = _themes.Count > 1;
+        NextBtn.IsEnabled = _themes.Count > 1;
+        UpdateApplyButton();
+    }
+
+    private void UpdateApplyButton()
+    {
+        if (_previewIdx < 0 || _previewIdx >= _themes.Count) return;
+        bool isCurrent = string.Equals(
+            _themes[_previewIdx].Sp2Path, _activeSp2, StringComparison.OrdinalIgnoreCase);
+
+        ApplyBtn.Content = isCurrent ? "✓ 当前使用" : "应用此主题";
+        ApplyBtn.IsEnabled = !isCurrent;
+        ApplyBtn.SetResourceReference(Button.StyleProperty,
+            isCurrent ? "SecondaryButton" : "PrimaryButton");
+
+    }
+
+    private void SyncCombo()
+    {
+        ThemeCombo.SelectionChanged -= ThemeCombo_SelectionChanged;
+        ThemeCombo.SelectedIndex = _previewIdx;
+        ThemeCombo.SelectionChanged += ThemeCombo_SelectionChanged;
+    }
+
+    private void ScanThemes()
+    {
+        _themes.Clear();
+        if (!Directory.Exists(MonitorThemesDir)) return;
+
+        foreach (var dir in Directory.GetDirectories(MonitorThemesDir).OrderBy(d => d))
         {
-            MessageBox.Show($"导入失败：{ex.Message}", "错误",
-                MessageBoxButton.OK, MessageBoxImage.Error);
+            var sp2 = Directory.GetFiles(dir, "*.sp2").FirstOrDefault();
+            if (sp2 is not null)
+                _themes.Add((Path.GetFileName(dir), sp2));
         }
     }
+
+    private void RebuildCombo()
+    {
+        ThemeCombo.SelectionChanged -= ThemeCombo_SelectionChanged;
+        ThemeCombo.Items.Clear();
+        foreach (var (name, _) in _themes)
+            ThemeCombo.Items.Add(name);
+        ThemeCombo.SelectionChanged += ThemeCombo_SelectionChanged;
+    }
+
+    private string ResolveActiveSp2()
+    {
+        if (_settingsService is null) return "";
+        var rel  = _settingsService.Settings.ActiveSp2Template;
+        var full = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, rel));
+        return File.Exists(full) ? full : "";
+    }
+
 }

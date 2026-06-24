@@ -1,10 +1,12 @@
 <UserControl x:Class="SSM.Views.Pages.ThemePage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctrl="clr-namespace:SSM.Views.Controls">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="48"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="56"/>
         </Grid.RowDefinitions>
 
         <!-- 顶部工具栏 -->
@@ -15,17 +17,59 @@
                 <TextBlock Text="主题库" FontSize="13" FontWeight="SemiBold"
                            Foreground="{DynamicResource TextPrimary}"
                            VerticalAlignment="Center"/>
-                <Button x:Name="ImportBtn" Content="导入 .spzip"
-                        Style="{DynamicResource SecondaryButton}"
-                        HorizontalAlignment="Right" VerticalAlignment="Center"
-                        Click="Import_Click"/>
             </Grid>
         </Border>
 
-        <!-- 主题卡片滚动区 -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled">
-            <WrapPanel x:Name="CardPanel" Margin="12" Orientation="Horizontal"/>
-        </ScrollViewer>
+        <!-- 预览区：左右箭头 + OverlayPreviewControl -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="44"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="44"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- 左箭头 -->
+            <Button Grid.Column="0" x:Name="PrevBtn" Content="◀"
+                    VerticalAlignment="Center" HorizontalAlignment="Center"
+                    Style="{DynamicResource SecondaryButton}"
+                    Width="32" Height="32" Padding="0"
+                    FontSize="14" Click="Prev_Click"/>
+
+            <!-- 预览 -->
+            <Border Grid.Column="1" Background="{DynamicResource BgDeep}"
+                    Margin="0,16" CornerRadius="10" ClipToBounds="True">
+                <ctrl:OverlayPreviewControl x:Name="Preview"/>
+            </Border>
+
+            <!-- 右箭头 -->
+            <Button Grid.Column="2" x:Name="NextBtn" Content="▶"
+                    VerticalAlignment="Center" HorizontalAlignment="Center"
+                    Style="{DynamicResource SecondaryButton}"
+                    Width="32" Height="32" Padding="0"
+                    FontSize="14" Click="Next_Click"/>
+        </Grid>
+
+        <!-- 底部控制栏 -->
+        <Border Grid.Row="2"
+                BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0"
+                Padding="16,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <ComboBox x:Name="ThemeCombo" Grid.Column="0"
+                          Style="{DynamicResource ComboBoxStyle}"
+                          VerticalAlignment="Center"
+                          Margin="0,0,12,0"
+                          SelectionChanged="ThemeCombo_SelectionChanged"/>
+
+                <Button x:Name="ApplyBtn" Grid.Column="1"
+                        VerticalAlignment="Center"
+                        MinWidth="120"
+                        Click="Apply_Click"/>
+            </Grid>
+        </Border>
     </Grid>
 </UserControl>

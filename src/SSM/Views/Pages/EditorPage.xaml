@@ -1,7 +1,6 @@
 <UserControl x:Class="SSM.Views.Pages.EditorPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:ctrl="clr-namespace:SSM.Views.Controls">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="48"/>
@@ -13,19 +12,20 @@
                 BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1"
                 Padding="16,0">
             <Grid>
-                <TextBlock Text="主题预览" FontSize="13" FontWeight="SemiBold"
+                <TextBlock Text="编辑器" FontSize="13" FontWeight="SemiBold"
                            Foreground="{DynamicResource TextPrimary}"
                            VerticalAlignment="Center"/>
-                <TextBlock x:Name="TemplateNameText"
-                           HorizontalAlignment="Right" VerticalAlignment="Center"
-                           FontSize="11" Foreground="{DynamicResource TextSecondary}"/>
+                <Button x:Name="ImportBtn" Content="导入主题"
+                        Style="{DynamicResource SecondaryButton}"
+                        HorizontalAlignment="Right" VerticalAlignment="Center"
+                        Click="Import_Click"/>
             </Grid>
         </Border>
 
-        <!-- 实时 Overlay 预览 -->
-        <Border Grid.Row="1" Background="{DynamicResource BgDeep}"
-                Margin="16" CornerRadius="10">
-            <ctrl:OverlayPreviewControl x:Name="Preview"/>
-        </Border>
+        <!-- 主题卡片滚动区 -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+            <WrapPanel x:Name="CardPanel" Margin="12" Orientation="Horizontal"/>
+        </ScrollViewer>
     </Grid>
 </UserControl>

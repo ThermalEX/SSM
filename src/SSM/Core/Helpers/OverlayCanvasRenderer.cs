@@ -51,17 +51,25 @@ public sealed class OverlayCanvasRenderer : IDisposable
     public void BuildFromTemplate(string sp2Path)
     {
         if (!File.Exists(sp2Path)) return;
-
         _templateDir = Path.GetDirectoryName(sp2Path) ?? "";
+
+        Sp2Panel panel;
+        try { panel = Sp2Parser.Parse(sp2Path); }
+        catch { return; }
+
+        BuildFromPanel(panel);
+    }
+
+    public void BuildFromPanel(Sp2Panel panel, string templateDir = "")
+    {
+        if (!string.IsNullOrEmpty(templateDir))
+            _templateDir = templateDir;
+
         _updaters.Clear();
         _graphCanvases.Clear();
         _graphColors.Clear();
         _canvas.Children.Clear();
         _clockTimer?.Stop();
-
-        Sp2Panel panel;
-        try { panel = Sp2Parser.Parse(sp2Path); }
-        catch { return; }
 
         _canvas.Width  = panel.Width;
         _canvas.Height = panel.Height;
@@ -80,12 +88,12 @@ public sealed class OverlayCanvasRenderer : IDisposable
         {
             switch (el.ElementKind)
             {
-                case "IMG":   BuildImage(el);     break;
-                case "LBL":   BuildLabel(el);     break;
-                case "SIMPLE":BuildSimple(el);    break;
-                case "GAUGE": BuildGauge(el);     break;
-                case "GRAPH": BuildGraph(el);     break;
-                case "BAR":   BuildBarSensor(el); break;
+                case "IMG":    BuildImage(el);     break;
+                case "LBL":    BuildLabel(el);     break;
+                case "SIMPLE": BuildSimple(el);    break;
+                case "GAUGE":  BuildGauge(el);     break;
+                case "GRAPH":  BuildGraph(el);     break;
+                case "BAR":    BuildBarSensor(el); break;
             }
         }
 
@@ -105,8 +113,9 @@ public sealed class OverlayCanvasRenderer : IDisposable
 
         foreach (var (sensorId, gCanvas) in _graphCanvases)
         {
-            var history = sensorId == "SCPUUTI" ? _cpuHistory : _gpuHistory;
-            var color   = _graphColors.GetValueOrDefault(sensorId, WpfColors.Cyan);
+            var history = sensorId is "SCPUUTI" or "TCPU" or "TCPUDIO" or "SCPUCLK"
+                ? _cpuHistory : _gpuHistory;
+            var color = _graphColors.GetValueOrDefault(sensorId, WpfColors.Cyan);
             RedrawGraph(gCanvas, history, color);
         }
     }
@@ -176,7 +185,8 @@ public sealed class OverlayCanvasRenderer : IDisposable
             case "STIME":     _timeText   = tb; break;
             case "SUPTIMENS": _uptimeText = tb; break;
             default:
-                var suffix = el.ShowUnit && el.Unit.Trim().Length > 0 ? " " + el.Unit.Trim() : "";
+                var unit   = ResolveUnit(el.SensorId, el.ShowUnit ? el.Unit : "");
+                var suffix = unit.Length > 0 ? unit : "";
                 _updaters[el.RawId] = data =>
                 {
                     float v = SensorValue(el.SensorId, data);
@@ -258,8 +268,9 @@ public sealed class OverlayCanvasRenderer : IDisposable
         var valTb = MakeTb("--", el.FontSize, valCol, el.FontName);
         Place(valTb, x, y);
 
-        if (el.ShowUnit && el.Unit.Trim().Length > 0)
-            Place(MakeTb(" " + el.Unit.Trim(), Math.Max(8, el.FontSize - 2),
+        var barUnit = ResolveUnit(el.SensorId, el.ShowUnit ? el.Unit : "");
+        if (barUnit.Length > 0)
+            Place(MakeTb(barUnit, Math.Max(8, el.FontSize - 2),
                 el.TextColor, el.FontName), x + (el.Width > 0 ? el.Width : 60), y);
 
         _updaters[el.RawId] = data =>
@@ -319,16 +330,85 @@ public sealed class OverlayCanvasRenderer : IDisposable
 
     private static float SensorValue(string sensorId, HardwareData data) => sensorId switch
     {
-        "TCPUDIO"  => data.Cpu.Temperature,
-        "TGPU1"    => data.Gpu.Temperature,
-        "SCPUUTI"  => data.Cpu.Load,
-        "SGPU1UTI" => data.Gpu.Load,
-        "FCPU"     => data.Cpu.FanSpeed,
-        "FCHA1"    => data.Gpu.FanSpeed,
-        "SCPUCLK"  => data.Cpu.Clock,
-        "SGPU1CLK" => data.Gpu.Clock,
-        _          => float.NaN
+        // ── CPU ──────────────────────────────────────────────────
+        "TCPU" or "TCPUDIO" or "TCPU1"
+                            => data.Cpu.Temperature,
+        "SCPUUTI"           => data.Cpu.Load,
+        "SCPUCLK" or "SCPUCLK1"
+                            => data.Cpu.Clock,
+        "FCPU" or "FCPU1"  => data.Motherboard.Fans.Count > 0
+                                ? data.Motherboard.Fans[0] : data.Cpu.FanSpeed,
+
+        // ── GPU ──────────────────────────────────────────────────
+        "TGPU1"             => data.Gpu.Temperature,
+        "SGPU1UTI"          => data.Gpu.Load,
+        "SGPU1CLK"          => data.Gpu.Clock,
+        "SGPU1MCLK"         => data.Gpu.MemoryClock,
+        "FGPU1"             => data.Gpu.FanSpeed,
+        "FCHA1"             => data.Motherboard.Fans.Count > 1
+                                ? data.Motherboard.Fans[1]
+                                : data.Motherboard.Fans.Count > 0 ? data.Motherboard.Fans[0] : 0,
+        "FCHA2"             => data.Motherboard.Fans.Count > 2 ? data.Motherboard.Fans[2] : 0,
+        // GPU memory in MB (AIDA64 reports MB for SmallData)
+        "SGPU1MEM" or "SGPU1USEDMEM"
+                            => data.Gpu.MemoryUsed,
+        "SGPU1TOTALMEM"     => data.Gpu.MemoryTotal,
+
+        // ── System Memory (GB → MB conversion) ───────────────────
+        "SUSEDMEM" or "SMEMUSED"
+                            => data.Memory.Used * 1024f,
+        "SFREEMEM" or "SMEMFREE"
+                            => data.Memory.Available * 1024f,
+        "STOTALMEM" or "SMEMTOTAL"
+                            => data.Memory.Total * 1024f,
+        "SRAMUTI" or "SMEMUTI" or "SUTI"
+                            => data.Memory.UsagePercent,
+
+        // ── Network ───────────────────────────────────────────────
+        "SNIC1DL" or "SNIC2DL" or "SNIC1DLRATE" or "SNIC2DLRATE"
+                            => data.Network.DownloadSpeed,
+        "SNIC1UL" or "SNIC2UL" or "SNIC1ULRATE" or "SNIC2ULRATE"
+                            => data.Network.UploadSpeed,
+
+        // ── Storage ───────────────────────────────────────────────
+        "THDD1" or "THDD2" or "TDTS" or "TSTO"
+                            => data.Storage.Temperature,
+
+        // ── Motherboard ───────────────────────────────────────────
+        "TMOBO" or "TMBSYS1"
+                            => data.Motherboard.Temperature,
+
+        // ── Audio ─────────────────────────────────────────────────
+        "SVOL" or "SVOL1" or "SVOLUME"
+                            => data.Audio.Volume,
+
+        _                   => float.NaN
     };
+
+    // ── Unit resolution ───────────────────────────────────────
+    // Returns the display unit string for a sensor. For well-known IDs, returns
+    // the standard unit regardless of what the sp2 template's UNT field says
+    // (AIDA64 templates sometimes contain corrupted or locale-specific characters).
+    private static string ResolveUnit(string sensorId, string templateUnit)
+    {
+        var known = sensorId switch
+        {
+            var s when s.StartsWith("T")                              => "°C",
+            var s when s.EndsWith("UTI") || s is "SRAMUTI" or "SUTI" => "%",
+            var s when s.EndsWith("CLK")                             => " MHz",
+            var s when s.StartsWith("F") && !s.StartsWith("FREE")   => " RPM",
+            var s when s.StartsWith("SNIC")                          => " B/s",
+            var s when s is "SVOL" or "SVOL1" or "SVOLUME"          => "%",
+            var s when s.StartsWith("SMEM") || s.StartsWith("SUSEDMEM")
+                      || s.StartsWith("SFREEMEM") || s.StartsWith("STOTALMEM")
+                                                                     => " MB",
+            _ => ""
+        };
+        if (known.Length > 0) return known;
+        // Fallback to template unit, but filter non-printable/surrogate chars
+        var trimmed = templateUnit.Trim();
+        return trimmed.All(c => c >= ' ' && !char.IsSurrogate(c)) ? trimmed : "";
+    }
 
     // ── Helpers ───────────────────────────────────────────────
 

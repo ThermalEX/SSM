@@ -1,4 +1,5 @@
 using LibreHardwareMonitor.Hardware;
+using SSM.Core.Helpers;
 using SSM.Core.Interfaces;
 using SSM.Core.Models;
 
@@ -22,6 +23,8 @@ public class HardwareMonitorService : IHardwareMonitorService
             IsGpuEnabled = true,
             IsMemoryEnabled = true,
             IsNetworkEnabled = true,
+            IsMotherboardEnabled = true,
+            IsStorageEnabled = true,
         };
         _computer.Open();
     }
@@ -71,8 +74,18 @@ public class HardwareMonitorService : IHardwareMonitorService
                 case HardwareType.Network:
                     ReadNetwork(hw, data.Network);
                     break;
+
+                case HardwareType.Motherboard:
+                    ReadMotherboard(hw, data.Motherboard);
+                    break;
+
+                case HardwareType.Storage:
+                    ReadStorage(hw, data.Storage);
+                    break;
             }
         }
+
+        data.Audio.Volume = AudioVolumeReader.GetMasterVolume();
 
         CurrentData = data;
         DataUpdated?.Invoke(this, data);
@@ -146,6 +159,10 @@ public class HardwareMonitorService : IHardwareMonitorService
                 case SensorType.Clock when s.Name.Contains("Core", StringComparison.OrdinalIgnoreCase) && gpu.Clock == 0:
                     gpu.Clock = s.Value ?? 0;
                     break;
+
+                case SensorType.Clock when s.Name.Contains("Memory", StringComparison.OrdinalIgnoreCase) && gpu.MemoryClock == 0:
+                    gpu.MemoryClock = s.Value ?? 0;
+                    break;
             }
         }
     }
@@ -162,6 +179,42 @@ public class HardwareMonitorService : IHardwareMonitorService
                 memory.Available = s.Value ?? 0;
         }
         memory.Total = memory.Used + memory.Available;
+    }
+
+    private static void ReadMotherboard(IHardware hw, MotherboardData mobo)
+    {
+        // Try motherboard's own sensors first
+        foreach (var s in hw.Sensors)
+        {
+            if (s.SensorType == SensorType.Temperature && (s.Value ?? 0) > 0 && mobo.Temperature == 0)
+                mobo.Temperature = s.Value!.Value;
+        }
+
+        // EC/SuperIO sensors live in SubHardware (Nuvoton, ITE, etc.)
+        foreach (var sub in hw.SubHardware)
+        {
+            sub.Update();
+            foreach (var s in sub.Sensors)
+            {
+                if (s.SensorType == SensorType.Temperature && (s.Value ?? 0) > 0 && mobo.Temperature == 0)
+                    mobo.Temperature = s.Value!.Value;
+
+                if (s.SensorType == SensorType.Fan && (s.Value ?? 0) > 0)
+                    mobo.Fans.Add(s.Value!.Value);
+            }
+        }
+    }
+
+    private static void ReadStorage(IHardware hw, StorageData storage)
+    {
+        foreach (var s in hw.Sensors)
+        {
+            if (s.SensorType == SensorType.Temperature && (s.Value ?? 0) > 0 && storage.Temperature == 0)
+            {
+                storage.Temperature = s.Value!.Value;
+                break;
+            }
+        }
     }
 
     private static void ReadNetwork(IHardware hw, NetworkData network)

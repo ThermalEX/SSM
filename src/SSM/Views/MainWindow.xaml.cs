@@ -43,12 +43,14 @@ public partial class MainWindow : Window
     // Card cache: built once per edit-mode state, reused during drag
     private readonly Dictionary<string, Border> _cardCache = new();
     private bool _cardCacheIsEditMode = false;
-    private Border? _placeholderCard;
 
-    // Drag state
+    // Drag state — no placeholder inserted into the grid; instead a drop-line
+    // indicator is drawn on DropIndicatorCanvas to avoid layout thrashing.
     private System.Windows.Point _dragStartPoint;
     private string? _draggingId;
-    private int _dragInsertIdx = -1;
+    private string? _dropTargetId;
+    private bool    _dropBefore = true;
+    private Border? _dropLine;
 
     private readonly Dictionary<string, Action<HardwareData, AppSettings>> _widgetUpdaters = new();
     private Ellipse? _statusDot;
@@ -97,6 +99,7 @@ public partial class MainWindow : Window
     {
         if (_isOverlayRunning)
             UnregisterHotKey(new WindowInteropHelper(this).Handle, HOTKEY_STOP_OVERLAY);
+        _themePage.Cleanup();
         _monitor.DataUpdated -= OnDataUpdated;
         _monitor.Stop();
         _monitor.Dispose();
@@ -139,12 +142,11 @@ public partial class MainWindow : Window
         ThemeView.Content = _themePage;
         EditorView.Content = _editorPage;
 
-        // Wire pages that need hardware monitor access
-        _themePage.Initialize(settingsService);
+        _themePage.Initialize(settingsService, _monitor);
         _themePage.ThemeApplied += OnThemeApplied;
 
-        var activeSp2 = ResolveActiveSp2Path();
-        _editorPage.Initialize(_monitor, activeSp2);
+        _editorPage.Initialize(settingsService);
+        _editorPage.ThemeApplied += OnThemeApplied;
 
         PopulateScreenList();
 
@@ -243,30 +245,19 @@ public partial class MainWindow : Window
     }
 
     // Fast rearrangement — only touches DashboardGrid.Children, never recreates controls
-    private void RefreshLayout(string? ghostId = null, int insertIdx = -1)
+    private void RefreshLayout()
     {
         DashboardGrid.Children.Clear();
 
         var visibleIds = _widgetOrder.Where(id => !_hiddenWidgets.Contains(id)).ToList();
-        var displayList = ghostId != null
-            ? visibleIds.Where(id => id != ghostId).ToList()
-            : visibleIds;
-
-        int cols = displayList.Count <= 2 ? 2 : displayList.Count <= 3 ? 3 : 4;
+        int cols = visibleIds.Count <= 2 ? 2 : visibleIds.Count <= 3 ? 3 : 4;
         DashboardGrid.Columns = cols;
 
-        for (int i = 0; i < displayList.Count; i++)
+        foreach (var id in visibleIds)
         {
-            if (i == insertIdx)
-                DashboardGrid.Children.Add(GetPlaceholder());
-
-            if (_cardCache.TryGetValue(displayList[i], out var card))
+            if (_cardCache.TryGetValue(id, out var card))
                 DashboardGrid.Children.Add(card);
         }
-
-        // Placeholder at tail
-        if (insertIdx >= displayList.Count && insertIdx >= 0)
-            DashboardGrid.Children.Add(GetPlaceholder());
     }
 
     private void RebuildHiddenPanel()
@@ -301,32 +292,8 @@ public partial class MainWindow : Window
         }
     }
 
-    private Border GetPlaceholder()
-    {
-        if (_placeholderCard != null) return _placeholderCard;
-
-        _placeholderCard = new Border { Margin = new Thickness(3, 0, 3, 8) };
-
-        // Dashed rounded rectangle as visual
-        var rect = new Rectangle
-        {
-            RadiusX = 9,
-            RadiusY = 9,
-            StrokeThickness = 2,
-            StrokeDashArray = new DoubleCollection([6, 4]),
-            Fill = System.Windows.Media.Brushes.Transparent,
-            Stretch = Stretch.Fill,
-            Opacity = 0.7,
-            Margin = new Thickness(1),
-            IsHitTestVisible = false,
-        };
-        rect.SetResourceReference(Rectangle.StrokeProperty, "Accent");
-        _placeholderCard.Child = rect;
-        return _placeholderCard;
-    }
-
     // ────────────────────────────────────────────────
-    //  Grid-level drag-and-drop (insert with live preview)
+    //  Grid-level drag-and-drop (drop-line indicator, no layout changes during drag)
     // ────────────────────────────────────────────────
 
     private void OnGridDragOver(object sender, DragEventArgs e)
@@ -335,169 +302,116 @@ public partial class MainWindow : Window
         e.Effects = DragDropEffects.Move;
         e.Handled = true;
 
-        // Make ghost card semi-transparent (idempotent)
         if (_cardCache.TryGetValue(ghostId, out var ghost))
             ghost.Opacity = 0.3;
 
         var pos = e.GetPosition(DashboardGrid);
-        int newIdx = CalcInsertIdx(pos, ghostId);
-        if (newIdx == _dragInsertIdx) return;
+        FindDropTarget(pos, ghostId, out var newTarget, out var newBefore);
 
-        _dragInsertIdx = newIdx;
-        AnimateLayout(ghostId, newIdx);
+        if (newTarget == _dropTargetId && newBefore == _dropBefore) return;
+        _dropTargetId = newTarget;
+        _dropBefore   = newBefore;
+
+        if (newTarget is not null && _cardCache.TryGetValue(newTarget, out var tc))
+            ShowDropLine(tc, newBefore);
+        else
+            HideDropLine();
     }
 
     private void OnGridDragLeave(object sender, DragEventArgs e)
     {
-        // DragLeave fires between children too; only act when truly leaving the grid
-        var pos = e.GetPosition(DashboardGrid);
+        var pos    = e.GetPosition(DashboardGrid);
         var bounds = new Rect(0, 0, DashboardGrid.ActualWidth, DashboardGrid.ActualHeight);
         if (bounds.Contains(pos)) return;
 
-        _dragInsertIdx = -1;
-        // Show all cards (ghost stays semi-transparent until drag ends)
-        RefreshLayout();
+        _dropTargetId = null;
+        HideDropLine();
+        foreach (var c in _cardCache.Values) c.Opacity = 1.0;
     }
 
     private void OnGridDrop(object sender, DragEventArgs e)
     {
         if (e.Data.GetData(typeof(string)) is not string sourceId) return;
+        HideDropLine();
 
-        var displayList = _widgetOrder
+        var visibleExcl = _widgetOrder
             .Where(id => !_hiddenWidgets.Contains(id) && id != sourceId)
             .ToList();
 
-        int insertIdx = Math.Clamp(_dragInsertIdx, 0, displayList.Count);
-        string? insertBeforeId = insertIdx < displayList.Count ? displayList[insertIdx] : null;
+        int insertAt = visibleExcl.Count; // default: append at end
+        if (_dropTargetId is not null)
+        {
+            int tIdx = visibleExcl.IndexOf(_dropTargetId);
+            if (tIdx >= 0) insertAt = _dropBefore ? tIdx : tIdx + 1;
+        }
 
+        string? insertBeforeId = insertAt < visibleExcl.Count ? visibleExcl[insertAt] : null;
         _widgetOrder.Remove(sourceId);
-        int targetIdx = insertBeforeId != null
-            ? _widgetOrder.IndexOf(insertBeforeId)
-            : _widgetOrder.Count;
-        if (targetIdx < 0) targetIdx = _widgetOrder.Count;
-        _widgetOrder.Insert(targetIdx, sourceId);
+        if (insertBeforeId is null)
+            _widgetOrder.Add(sourceId);
+        else
+        {
+            int pos = _widgetOrder.IndexOf(insertBeforeId);
+            _widgetOrder.Insert(Math.Max(0, pos), sourceId);
+        }
 
-        _dragInsertIdx = -1;
+        _dropTargetId = null;
         SaveWidgetConfig();
         RebuildDashboard();
         e.Handled = true;
     }
 
-    private int CalcInsertIdx(System.Windows.Point pos, string ghostId)
+    // Find which existing card the mouse is over, and whether to insert before/after it.
+    private void FindDropTarget(System.Windows.Point pos, string ghostId,
+                                out string? targetId, out bool before)
     {
-        var displayList = _widgetOrder
+        targetId = null;
+        before   = true;
+        var visibleIds = _widgetOrder
             .Where(id => !_hiddenWidgets.Contains(id) && id != ghostId)
             .ToList();
 
-        int count = displayList.Count;
-        if (count == 0) return 0;
-
-        int cols = DashboardGrid.Columns > 0 ? DashboardGrid.Columns : 4;
-
-        // Cell width from grid
-        double cellW = DashboardGrid.ActualWidth / cols;
-        if (cellW <= 0) return count;
-
-        // Cell height: read from first non-placeholder child
-        double cellH = 120;
-        foreach (UIElement child in DashboardGrid.Children)
+        foreach (var id in visibleIds)
         {
-            if (child is FrameworkElement fe && child != _placeholderCard && fe.ActualHeight > 10)
+            if (!_cardCache.TryGetValue(id, out var card) || card.ActualWidth <= 0) continue;
+            try
             {
-                cellH = fe.ActualHeight;
-                break;
+                var tl   = card.TransformToVisual(DashboardGrid).Transform(default);
+                var rect = new Rect(tl.X, tl.Y, card.ActualWidth, card.ActualHeight);
+                if (!rect.Contains(pos)) continue;
+                targetId = id;
+                before   = pos.X < rect.X + rect.Width / 2;
+                return;
             }
+            catch { }
         }
-
-        int col = Math.Clamp((int)(pos.X / cellW), 0, cols - 1);
-        int row = Math.Max(0, (int)(pos.Y / cellH));
-        int cellIdx = row * cols + col;
-
-        // Insert before or after based on X position within cell
-        double localX = pos.X - col * cellW;
-        bool insertBefore = localX < cellW / 2;
-        int insertIdx = insertBefore ? cellIdx : cellIdx + 1;
-
-        return Math.Clamp(insertIdx, 0, count);
     }
 
-    // FLIP animation: records old positions, applies new layout, then animates each card
-    // from where it was to where it ended up — without blocking the UI thread.
-    private void AnimateLayout(string? ghostId, int insertIdx)
+    // Show a thin vertical indicator line on the overlay canvas (no grid layout change).
+    private void ShowDropLine(Border targetCard, bool before)
     {
-        int oldCols = DashboardGrid.Columns > 0 ? DashboardGrid.Columns : 4;
-        double oldCellW = DashboardGrid.ActualWidth / oldCols;
-
-        // Pre-read cell height from first real card (UniformGrid makes all cells equal)
-        double cellH = 100;
-        foreach (UIElement child in DashboardGrid.Children)
+        if (_dropLine is null)
         {
-            if (child != _placeholderCard && child is FrameworkElement fe && fe.ActualHeight > 10)
-            { cellH = fe.ActualHeight; break; }
+            _dropLine = new Border { Width = 3, CornerRadius = new CornerRadius(2), IsHitTestVisible = false };
+            _dropLine.SetResourceReference(Border.BackgroundProperty, "Accent");
+            DropIndicatorCanvas.Children.Add(_dropLine);
         }
-
-        // Snapshot: index-in-children + current animated TX/TY for every visible card
-        var oldState = new Dictionary<string, (int idx, double tx, double ty)>();
-        int i = 0;
-        foreach (UIElement child in DashboardGrid.Children)
+        try
         {
-            if (child != _placeholderCard && child is FrameworkElement fe && fe.Tag is string id)
-            {
-                double tx = 0, ty = 0;
-                if (fe.RenderTransform is TranslateTransform existTt)
-                { tx = existTt.X; ty = existTt.Y; }
-                oldState[id] = (i, tx, ty);
-            }
-            i++;
+            var tl    = targetCard.TransformToVisual(DropIndicatorCanvas).Transform(default);
+            double h  = targetCard.ActualHeight * 0.75;
+            double x  = before ? tl.X - 1.5 : tl.X + targetCard.ActualWidth - 1.5;
+            Canvas.SetLeft(_dropLine, x);
+            Canvas.SetTop(_dropLine, tl.Y + targetCard.ActualHeight * 0.125);
+            _dropLine.Height     = h;
+            _dropLine.Visibility = Visibility.Visible;
         }
+        catch { _dropLine.Visibility = Visibility.Collapsed; }
+    }
 
-        // Commit new layout (instant, no animation yet)
-        RefreshLayout(ghostId, insertIdx);
-
-        int newCols = DashboardGrid.Columns > 0 ? DashboardGrid.Columns : 4;
-        double newCellW = DashboardGrid.ActualWidth / newCols;
-
-        var ease = new System.Windows.Media.Animation.CubicEase
-            { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut };
-        var dur = new Duration(TimeSpan.FromMilliseconds(200));
-
-        int newIdx = 0;
-        foreach (UIElement child in DashboardGrid.Children)
-        {
-            if (child != _placeholderCard && child is FrameworkElement feNew && feNew.Tag is string cardId)
-            {
-                if (oldState.TryGetValue(cardId, out var s))
-                {
-                    // Where the card WAS rendering (old layout pos + mid-animation offset)
-                    double oldRenderedX = (s.idx % oldCols) * oldCellW + s.tx;
-                    double oldRenderedY = (s.idx / oldCols) * cellH  + s.ty;
-
-                    // Where the card IS NOW in the new layout
-                    double newLayoutX = (newIdx % newCols) * newCellW;
-                    double newLayoutY = (newIdx / newCols) * cellH;
-
-                    // Transform that makes the card appear at its old rendered position
-                    double startX = oldRenderedX - newLayoutX;
-                    double startY = oldRenderedY - newLayoutY;
-
-                    if (Math.Abs(startX) > 1 || Math.Abs(startY) > 1)
-                    {
-                        // Start offset = old position, animate to 0 (new layout position)
-                        var tt = new TranslateTransform(startX, startY);
-                        feNew.RenderTransform = tt;
-                        tt.BeginAnimation(TranslateTransform.XProperty,
-                            new System.Windows.Media.Animation.DoubleAnimation(0, dur) { EasingFunction = ease });
-                        tt.BeginAnimation(TranslateTransform.YProperty,
-                            new System.Windows.Media.Animation.DoubleAnimation(0, dur) { EasingFunction = ease });
-                    }
-                    else
-                    {
-                        feNew.RenderTransform = Transform.Identity;
-                    }
-                }
-            }
-            newIdx++;
-        }
+    private void HideDropLine()
+    {
+        if (_dropLine is not null) _dropLine.Visibility = Visibility.Collapsed;
     }
 
     // ────────────────────────────────────────────────
@@ -546,15 +460,11 @@ public partial class MainWindow : Window
 
                 var result = DragDrop.DoDragDrop(handle, capturedId, DragDropEffects.Move);
 
-                // Drag ended
-                _draggingId = null;
-                _dragInsertIdx = -1;
-                if (result != DragDropEffects.Move)
-                {
-                    // Cancelled — restore opacity and layout
-                    foreach (var c in _cardCache.Values) c.Opacity = 1.0;
-                    RefreshLayout();
-                }
+                // Drag ended — restore state
+                _draggingId   = null;
+                _dropTargetId = null;
+                HideDropLine();
+                foreach (var c in _cardCache.Values) c.Opacity = 1.0;
             };
 
             var removeBtn = new Button
@@ -901,8 +811,8 @@ public partial class MainWindow : Window
 
     private void OnThemeApplied(string sp2Path)
     {
-        _editorPage.ReloadTemplate(sp2Path);
         _themePage.Refresh();
+        _editorPage.Refresh();
 
         if (_isOverlayRunning)
         {
