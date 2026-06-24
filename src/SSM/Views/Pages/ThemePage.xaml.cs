@@ -21,7 +21,7 @@ public partial class ThemePage : UserControl
     public event Action<string>? ThemeApplied;
 
     private static string MonitorThemesDir =>
-        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Themes", "monitor");
+        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Themes", "Monitor");
 
     // Ordered list of (name, sp2Path) for all discovered themes
     private readonly List<(string Name, string Sp2Path)> _themes = new();

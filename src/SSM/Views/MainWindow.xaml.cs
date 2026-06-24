@@ -806,7 +806,7 @@ public partial class MainWindow : Window
 
         return System.IO.Path.Combine(
             AppDomain.CurrentDomain.BaseDirectory,
-            "Themes", "monitor", "template", "2026-06-23.sp2");
+            "Themes", "Monitor", "template", "2026-06-23.sp2");
     }
 
     private void OnThemeApplied(string sp2Path)

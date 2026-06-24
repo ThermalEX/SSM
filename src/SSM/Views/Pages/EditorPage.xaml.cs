@@ -18,7 +18,7 @@ public partial class EditorPage : UserControl
     public event Action<string>? ThemeApplied;
 
     private static string MonitorThemesDir =>
-        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Themes", "monitor");
+        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Themes", "Monitor");
 
     public EditorPage()
     {

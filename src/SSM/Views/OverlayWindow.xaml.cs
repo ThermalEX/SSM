@@ -66,7 +66,7 @@ public partial class OverlayWindow : Window
         }
         // fallback to default bundled template
         return Path.Combine(AppDomain.CurrentDomain.BaseDirectory,
-            "Themes", "monitor", "template", "2026-06-23.sp2");
+            "Themes", "Monitor", "template", "2026-06-23.sp2");
     }
 
     private void PositionOnScreen(int index)

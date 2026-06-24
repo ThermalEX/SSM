@@ -21,5 +21,5 @@ public class AppSettings
     public List<DashboardWidgetConfig> DashboardWidgets { get; set; } = new();
 
     // Relative path from BaseDirectory to the active .sp2 template
-    public string ActiveSp2Template { get; set; } = @"Themes\monitor\template\2026-06-23.sp2";
+    public string ActiveSp2Template { get; set; } = @"Themes\Monitor\template\2026-06-23.sp2";
 }
