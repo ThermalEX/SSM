@@ -29,10 +29,9 @@ public sealed class OverlayCanvasRenderer : IDisposable
     private readonly IHardwareMonitorService _monitor;
 
     private readonly Dictionary<string, Action<HardwareData>> _updaters = new();
-    private readonly Queue<float> _cpuHistory = new();
-    private readonly Queue<float> _gpuHistory = new();
-    private readonly Dictionary<string, Canvas> _graphCanvases = new();
-    private readonly Dictionary<string, WpfColor> _graphColors = new();
+    private readonly Dictionary<string, Canvas>     _graphCanvases   = new();
+    private readonly Dictionary<string, WpfColor>   _graphColors     = new();
+    private readonly Dictionary<string, Queue<float>> _graphHistories = new();
 
     private const int HistoryLen = 60;
 
@@ -68,6 +67,7 @@ public sealed class OverlayCanvasRenderer : IDisposable
         _updaters.Clear();
         _graphCanvases.Clear();
         _graphColors.Clear();
+        _graphHistories.Clear();
         _canvas.Children.Clear();
         _clockTimer?.Stop();
 
@@ -108,13 +108,10 @@ public sealed class OverlayCanvasRenderer : IDisposable
         foreach (var u in _updaters.Values)
             u(data);
 
-        EnqueueHistory(_cpuHistory, data.Cpu.Load);
-        EnqueueHistory(_gpuHistory, data.Gpu.Load);
-
         foreach (var (sensorId, gCanvas) in _graphCanvases)
         {
-            var history = sensorId is "SCPUUTI" or "TCPU" or "TCPUDIO" or "SCPUCLK"
-                ? _cpuHistory : _gpuHistory;
+            if (!_graphHistories.TryGetValue(sensorId, out var history)) continue;
+            EnqueueHistory(history, SensorValue(sensorId, data));
             var color = _graphColors.GetValueOrDefault(sensorId, WpfColors.Cyan);
             RedrawGraph(gCanvas, history, color);
         }
@@ -244,9 +241,10 @@ public sealed class OverlayCanvasRenderer : IDisposable
         var gCanvas = new Canvas { Width = w, Height = h, ClipToBounds = true };
         Place(gCanvas, el.X, el.Y);
 
-        _graphCanvases[el.SensorId] = gCanvas;
-        _graphColors[el.SensorId]   = el.GraphColor != WpfColors.Transparent
+        _graphCanvases[el.SensorId]  = gCanvas;
+        _graphColors[el.SensorId]    = el.GraphColor != WpfColors.Transparent
             ? el.GraphColor : WpfColors.Cyan;
+        _graphHistories[el.SensorId] = new Queue<float>();
     }
 
     // ── BAR / plain sensor text ───────────────────────────────
@@ -265,18 +263,16 @@ public sealed class OverlayCanvasRenderer : IDisposable
             x += el.Label.Length * el.FontSize * 0.55 + 4;
         }
 
-        var valTb = MakeTb("--", el.FontSize, valCol, el.FontName);
+        var valTb  = MakeTb("--", el.FontSize, valCol, el.FontName);
         Place(valTb, x, y);
 
         var barUnit = ResolveUnit(el.SensorId, el.ShowUnit ? el.Unit : "");
-        if (barUnit.Length > 0)
-            Place(MakeTb(barUnit, Math.Max(8, el.FontSize - 2),
-                el.TextColor, el.FontName), x + (el.Width > 0 ? el.Width : 60), y);
+        string suffix = barUnit.Length > 0 ? barUnit : "";
 
         _updaters[el.RawId] = data =>
         {
             float v = SensorValue(el.SensorId, data);
-            valTb.Text = float.IsNaN(v) ? "--" : $"{v:F0}";
+            valTb.Text = float.IsNaN(v) ? "--" : $"{v:F0}{suffix}";
         };
     }
 
