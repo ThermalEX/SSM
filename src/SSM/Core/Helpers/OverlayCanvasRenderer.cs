@@ -130,9 +130,11 @@ public sealed class OverlayCanvasRenderer : IDisposable
         var path = Path.Combine(_templateDir, el.ImageFile);
         if (!File.Exists(path)) return;
 
+        var bmp = LoadBitmap(path);
+        if (bmp is null) return;
         var img = new Image
         {
-            Source  = LoadBitmap(path),
+            Source  = bmp,
             Stretch = el.IsBackground ? Stretch.Fill : Stretch.Uniform
         };
 
@@ -232,13 +234,7 @@ public sealed class OverlayCanvasRenderer : IDisposable
         double w = el.Width  > 0 ? el.Width  : 250;
         double h = el.Height > 0 ? el.Height : 100;
 
-        var bgFill = el.BgColor != WpfColors.Transparent
-            ? (Brush)new SolidColorBrush(el.BgColor)
-            : Brushes.Transparent;
-
-        Place(new Rectangle { Width = w, Height = h, Fill = bgFill }, el.X, el.Y);
-
-        var gCanvas = new Canvas { Width = w, Height = h, ClipToBounds = true };
+        var gCanvas = new Canvas { Width = w, Height = h, ClipToBounds = true, Background = Brushes.Transparent };
         Place(gCanvas, el.X, el.Y);
 
         _graphCanvases[el.SensorId]  = gCanvas;
@@ -249,7 +245,7 @@ public sealed class OverlayCanvasRenderer : IDisposable
         // immediately meaningful instead of growing in from the right edge.
         var history = new Queue<float>();
         float initVal = SensorValue(el.SensorId, _monitor.CurrentData ?? new());
-        if (!float.IsNaN(initVal))
+        if (!float.IsNaN(initVal) && initVal > 0)
             for (int i = 0; i < HistoryLen; i++)
                 history.Enqueue(initVal);
         _graphHistories[el.SensorId] = history;
@@ -291,27 +287,28 @@ public sealed class OverlayCanvasRenderer : IDisposable
         gCanvas.Children.Clear();
         if (history.Count == 0) return;
 
-        double w     = gCanvas.Width;
-        double h     = gCanvas.Height;
-        var pts      = history.ToArray();
-        int n        = pts.Length;
-        double barW  = w / HistoryLen;
-        var brush    = new SolidColorBrush(lineColor);
-        double gap   = Math.Max(0, barW * 0.15); // 15% inter-bar gap
+        double w   = gCanvas.Width;
+        double h   = gCanvas.Height;
+        var pts    = history.ToArray();
+        int n      = pts.Length;
+        double step = w / HistoryLen;
+        int offset  = HistoryLen - n;
+
+        var polyline = new System.Windows.Shapes.Polyline
+        {
+            Stroke          = new SolidColorBrush(lineColor),
+            StrokeThickness = 1.5,
+            StrokeLineJoin  = PenLineJoin.Round,
+        };
 
         for (int i = 0; i < n; i++)
         {
-            double barH = Math.Max(1, (pts[i] / 100.0) * h);
-            var rect = new Rectangle
-            {
-                Width  = Math.Max(1, barW - gap),
-                Height = barH,
-                Fill   = brush
-            };
-            Canvas.SetLeft(rect, (HistoryLen - n + i) * barW);
-            Canvas.SetTop(rect, h - barH);
-            gCanvas.Children.Add(rect);
+            double x = (offset + i) * step;
+            double y = h - Math.Clamp(pts[i] / 100.0, 0, 1) * h;
+            polyline.Points.Add(new System.Windows.Point(x, y));
         }
+
+        gCanvas.Children.Add(polyline);
     }
 
     private static void EnqueueHistory(Queue<float> q, float value)
@@ -436,15 +433,19 @@ public sealed class OverlayCanvasRenderer : IDisposable
             Foreground = new SolidColorBrush(color)
         };
 
-    private static BitmapImage LoadBitmap(string path)
+    private static BitmapImage? LoadBitmap(string path)
     {
-        var bmp = new BitmapImage();
-        bmp.BeginInit();
-        bmp.UriSource     = new Uri(path, UriKind.Absolute);
-        bmp.CacheOption   = BitmapCacheOption.OnLoad;
-        bmp.CreateOptions = BitmapCreateOptions.None;
-        bmp.EndInit();
-        bmp.Freeze();
-        return bmp;
+        try
+        {
+            var bmp = new BitmapImage();
+            bmp.BeginInit();
+            bmp.UriSource     = new Uri(path, UriKind.Absolute);
+            bmp.CacheOption   = BitmapCacheOption.OnLoad;
+            bmp.CreateOptions = BitmapCreateOptions.None;
+            bmp.EndInit();
+            bmp.Freeze();
+            return bmp;
+        }
+        catch { return null; }
     }
 }

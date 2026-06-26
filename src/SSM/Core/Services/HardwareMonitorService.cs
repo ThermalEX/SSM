@@ -25,6 +25,7 @@ public class HardwareMonitorService : IHardwareMonitorService
             IsNetworkEnabled = true,
             IsMotherboardEnabled = true,
             IsStorageEnabled = true,
+            IsControllerEnabled = true,
         };
         _computer.Open();
     }
@@ -32,6 +33,7 @@ public class HardwareMonitorService : IHardwareMonitorService
     public void Start(int intervalMs = 1000)
     {
         _timer?.Dispose();
+        Refresh();
         _timer = new System.Timers.Timer(intervalMs);
         _timer.Elapsed += (_, _) => Refresh();
         _timer.AutoReset = true;

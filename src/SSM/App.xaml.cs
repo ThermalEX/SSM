@@ -1,3 +1,4 @@
+using System.Text;
 using System.Windows;
 using System.Windows.Media.Animation;
 using SSM.Core.Services;
@@ -10,6 +11,7 @@ public partial class App : System.Windows.Application
 {
     protected override void OnStartup(StartupEventArgs e)
     {
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
         base.OnStartup(e);
 
         var settingsService = new SettingsService();

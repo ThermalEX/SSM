@@ -83,6 +83,9 @@ public static class SensorpanelImporter
         int n = fs.Read(header);
         if (n >= 2 && header[0] == 0xFF && header[1] == 0xFE) return Encoding.Unicode;   // UTF-16 LE BOM
         if (n >= 2 && header[0] == 0x3C && header[1] == 0x00) return Encoding.Unicode;   // UTF-16 LE, no BOM
-        return Encoding.UTF8;
+        if (n >= 3 && header[0] == 0xEF && header[1] == 0xBB && header[2] == 0xBF) return Encoding.UTF8; // UTF-8 BOM
+        // 无 BOM 时用 GBK（AIDA64 中文版导出格式），需要先注册 CodePagesEncodingProvider
+        try { return Encoding.GetEncoding(936); }
+        catch { return Encoding.UTF8; }
     }
 }

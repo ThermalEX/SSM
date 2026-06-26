@@ -29,9 +29,7 @@ public partial class OverlayPreviewControl : UserControl
 
         _monitor.DataUpdated += OnDataUpdated;
 
-        var current = monitor.CurrentData;
-        if (current.Cpu.Temperature > 0 || current.Cpu.Load > 0)
-            _renderer.OnDataUpdated(current);
+        _renderer.OnDataUpdated(monitor.CurrentData);
     }
 
     public void ReloadTemplate(string sp2Path)

@@ -49,9 +49,7 @@ public partial class OverlayWindow : Window
 
         _monitor.DataUpdated += OnDataUpdated;
 
-        var current = _monitor.CurrentData;
-        if (current.Cpu.Temperature > 0 || current.Cpu.Load > 0)
-            _renderer.OnDataUpdated(current);
+        _renderer.OnDataUpdated(_monitor.CurrentData);
     }
 
     protected override void OnClosed(EventArgs e)
