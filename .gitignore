@@ -77,3 +77,13 @@ logs/
 
 # Crash dumps
 *.dmp
+
+# Claude Code / AI agent infrastructure
+.claude/
+.agents/
+AGENTS.md
+skills-lock.json
+build/verify/
+
+# Runtime-imported themes (written to build output, not source)
+src/SSM/Themes/Tmp/
