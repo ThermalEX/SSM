@@ -1,6 +1,7 @@
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Windows.Media.Imaging;
 using WpfColor = System.Windows.Media.Color;
 using WpfColors = System.Windows.Media.Colors;
 
@@ -75,6 +76,28 @@ public static class Sp2Parser
             var el = BuildElement(rawId, tags);
             if (el is not null)
                 panel.Elements.Add(el);
+        }
+
+        // SPWIDTH=0/SPHEIGHT=0 means "full screen" in AIDA64 — infer from bg image
+        if (panel.Width == 0 || panel.Height == 0)
+        {
+            var dir = Path.GetDirectoryName(filePath) ?? "";
+            var bgEl = panel.Elements.FirstOrDefault(e => e.ElementKind == "IMG" && !string.IsNullOrEmpty(e.ImageFile));
+            var bgPath = bgEl is not null ? Path.Combine(dir, bgEl.ImageFile) : null;
+            if (bgPath is not null && File.Exists(bgPath))
+            {
+                try
+                {
+                    var decoder = BitmapDecoder.Create(new Uri(bgPath, UriKind.Absolute),
+                        BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
+                    var frame = decoder.Frames[0];
+                    if (panel.Width  == 0) panel.Width  = frame.PixelWidth;
+                    if (panel.Height == 0) panel.Height = frame.PixelHeight;
+                }
+                catch { }
+            }
+            if (panel.Width  == 0) panel.Width  = 1920;
+            if (panel.Height == 0) panel.Height = 1080;
         }
 
         return panel;
