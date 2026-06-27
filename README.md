@@ -9,6 +9,17 @@
 
 ---
 
+## 下载
+
+| 版本 | 说明 |
+| --- | --- |
+| `SSM-Setup-x.x.x.exe` | 安装版，含安装向导与卸载程序 |
+| `SSM-Portable-x.x.x.zip` | 便携版，解压即用，无需安装 |
+
+> 需要 Windows 10 / 11 x64，首次运行请**以管理员身份**启动（LibreHardwareMonitor 读取硬件传感器需要）。
+
+---
+
 ## 功能特性
 
 - **实时硬件监控仪表盘** — CPU / GPU 温度、使用率、时钟频率、风扇转速；内存用量；硬盘温度；网络上下行速率；主板温度
@@ -40,9 +51,13 @@
 
 ```text
 SSM/
+├── installer.iss                   # Inno Setup 安装包脚本
+├── build.ps1                       # 一键构建脚本（发布 + 便携包 + 安装包）
+├── make-icon.ps1                   # 程序图标生成脚本
 ├── src/SSM/
 │   ├── App.xaml(.cs)               # 启动、主题切换
 │   ├── Assets/
+│   │   ├── Icons/app.ico           # 应用图标
 │   │   └── settings.json           # 用户配置（自动生成）
 │   ├── Core/
 │   │   ├── Helpers/
@@ -104,6 +119,16 @@ dotnet run --project src/SSM/SSM.csproj
 ```
 
 > **调试 UI 时**可将 `app.manifest` 中的 `requireAdministrator` 改为 `asInvoker`，无需管理员即可启动。
+
+### 打包发布
+
+需要提前安装 [Inno Setup 6](https://jrsoftware.org/isdl.php)，然后在项目根目录运行：
+
+```powershell
+.\build.ps1
+```
+
+在 `build\installer\` 下生成安装版（`.exe`）与便携版（`.zip`）。
 
 ---
 
@@ -198,5 +223,5 @@ dotnet run --project src/SSM/SSM.csproj
 
 ## Collaborators
 
-- ThermalEX Dajiji
-
+- ThermalEX
+- slothtata-2004

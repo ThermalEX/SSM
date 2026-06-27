@@ -49,6 +49,8 @@ artifacts/
 # dotnet publish output
 publish/
 build/output/
+build/publish/
+build/installer/
 
 # User-specific files
 *.rsuser

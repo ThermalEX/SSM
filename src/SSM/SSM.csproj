@@ -8,6 +8,7 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\Icons\app.ico</ApplicationIcon>
     <RootNamespace>SSM</RootNamespace>
   </PropertyGroup>
 
